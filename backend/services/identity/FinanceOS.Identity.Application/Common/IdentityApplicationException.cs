@@ -6,4 +6,6 @@ public sealed class IdentityConflictException(string message) : IdentityApplicat
 
 public sealed class IdentityNotFoundException(string message) : IdentityApplicationException(message);
 
+public sealed class IdentityForbiddenException(string message) : IdentityApplicationException(message);
+
 public sealed class IdentityValidationException(string message) : IdentityApplicationException(message);

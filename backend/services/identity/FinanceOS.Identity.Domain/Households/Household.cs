@@ -40,6 +40,18 @@ public sealed class Household
 
     public IReadOnlyCollection<HouseholdMembership> Memberships => _memberships.AsReadOnly();
 
+    public bool HasMember(UserId userId)
+    {
+        return _memberships.Any(membership => membership.UserId == userId);
+    }
+
+    public bool CanManageMembers(UserId userId)
+    {
+        var membership = _memberships.FirstOrDefault(member => member.UserId == userId);
+
+        return membership?.Role is HouseholdRole.Owner or HouseholdRole.Admin;
+    }
+
     public static Household Create(string name, string currency, UserId ownerId, DateTimeOffset? createdAt = null)
     {
         if (ownerId.Value == Guid.Empty)

@@ -13,3 +13,11 @@ FinanceOS security requirements include:
 Phase 0 only establishes the project structure. Authentication and authorization begin in Phase 1.
 
 Phase 1 authentication targets OpenID Connect with JWT access tokens and refresh tokens suitable for both Angular web and Ionic mobile clients. FinanceOS must not implement custom password storage or custom cryptography.
+
+Identity APIs are prepared for JWT bearer validation through:
+
+- `Authentication:Jwt:RequireAuthorization`
+- `Authentication:Jwt:Authority`
+- `Authentication:Jwt:Audience`
+
+Until a real OIDC provider is configured, local development may disable endpoint authorization, but household membership mutations still validate the actor's membership and role inside the target household.

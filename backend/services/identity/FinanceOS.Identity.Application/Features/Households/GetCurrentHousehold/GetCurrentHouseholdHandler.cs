@@ -20,17 +20,6 @@ public sealed class GetCurrentHouseholdHandler(IHouseholdRepository households)
             throw new IdentityNotFoundException("Household was not found.");
         }
 
-        return new HouseholdDetailsResult(
-            household.Id.Value,
-            household.Name,
-            household.Currency,
-            household.OwnerId.Value,
-            household.CreatedAt,
-            household.Memberships
-                .Select(membership => new HouseholdMemberResult(
-                    membership.UserId.Value,
-                    membership.Role.ToString(),
-                    membership.JoinedAt))
-                .ToArray());
+        return HouseholdDetailsResult.FromHousehold(household);
     }
 }

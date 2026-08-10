@@ -1,8 +1,14 @@
 using FinanceOS.Identity.Application.Abstractions;
 using FinanceOS.Identity.Application.Common;
+using FinanceOS.Identity.Application.Features.Households.AddHouseholdMember;
+using FinanceOS.Identity.Application.Features.Households.ChangeHouseholdMemberRole;
 using FinanceOS.Identity.Application.Features.Households.CreateHousehold;
 using FinanceOS.Identity.Application.Features.Households.GetCurrentHousehold;
+using FinanceOS.Identity.Application.Features.Households.GetHousehold;
+using FinanceOS.Identity.Application.Features.Households.RemoveHouseholdMember;
 using FinanceOS.Identity.Application.Features.Users.CreateUser;
+using FinanceOS.Identity.Application.Features.Users.GetUser;
+using FinanceOS.Identity.Application.Features.Users.UpdateUserProfile;
 using FinanceOS.Identity.Domain.Households;
 using FinanceOS.Identity.Domain.Users;
 
@@ -98,6 +104,158 @@ public sealed class IdentityApplicationTests
 
         Assert.Equal(household.Id.Value, result.HouseholdId);
         Assert.Single(result.Members);
+    }
+
+    [Fact]
+    public async Task GetUserReturnsExistingUser()
+    {
+        var users = new InMemoryUserRepository();
+        var user = User.Register("Ait", "Tghrayt", "user@example.com", "EUR", "fr", "Europe/Paris");
+        await users.AddAsync(user, CancellationToken.None);
+
+        var handler = new GetUserHandler(users);
+
+        var result = await handler.HandleAsync(user.Id.Value, CancellationToken.None);
+
+        Assert.Equal(user.Id.Value, result.UserId);
+        Assert.Equal("user@example.com", result.Email);
+    }
+
+    [Fact]
+    public async Task UpdateUserProfilePersistsProfileChanges()
+    {
+        var users = new InMemoryUserRepository();
+        var user = User.Register("Ait", "Tghrayt", "user@example.com", "EUR", "fr", "Europe/Paris");
+        await users.AddAsync(user, CancellationToken.None);
+
+        var handler = new UpdateUserProfileHandler(users, new InMemoryUnitOfWork());
+
+        var result = await handler.HandleAsync(
+            new UpdateUserProfileCommand(user.Id.Value, "Youssef", "Tghrayt", "usd", "EN", "UTC"),
+            CancellationToken.None);
+
+        Assert.Equal("Youssef", result.FirstName);
+        Assert.Equal("USD", result.PreferredCurrency);
+        Assert.Equal("en", result.Language);
+        Assert.Equal("UTC", result.TimeZone);
+    }
+
+    [Fact]
+    public async Task GetHouseholdReturnsHouseholdDetails()
+    {
+        var households = new InMemoryHouseholdRepository();
+        var owner = User.Register("Ait", "Tghrayt", "owner@example.com", "EUR", "fr", "Europe/Paris");
+        var household = Household.Create("Family", "EUR", owner.Id);
+        await households.AddAsync(household, CancellationToken.None);
+
+        var handler = new GetHouseholdHandler(households);
+
+        var result = await handler.HandleAsync(household.Id.Value, CancellationToken.None);
+
+        Assert.Equal(household.Id.Value, result.HouseholdId);
+        Assert.Single(result.Members);
+    }
+
+    [Fact]
+    public async Task AddHouseholdMemberAddsExistingUserAsMember()
+    {
+        var users = new InMemoryUserRepository();
+        var households = new InMemoryHouseholdRepository();
+        var owner = User.Register("Ait", "Tghrayt", "owner@example.com", "EUR", "fr", "Europe/Paris");
+        var member = User.Register("Other", "User", "member@example.com", "EUR", "fr", "Europe/Paris");
+        var household = Household.Create("Family", "EUR", owner.Id);
+
+        await users.AddAsync(owner, CancellationToken.None);
+        await users.AddAsync(member, CancellationToken.None);
+        await households.AddAsync(household, CancellationToken.None);
+
+        var handler = new AddHouseholdMemberHandler(users, households, new InMemoryUnitOfWork());
+
+        var result = await handler.HandleAsync(
+            new AddHouseholdMemberCommand(household.Id.Value, owner.Id.Value, member.Id.Value, "Member"),
+            CancellationToken.None);
+
+        Assert.Contains(result.Members, membership =>
+            membership.UserId == member.Id.Value && membership.Role == "Member");
+    }
+
+    [Fact]
+    public async Task ChangeHouseholdMemberRoleUpdatesExistingMember()
+    {
+        var households = new InMemoryHouseholdRepository();
+        var owner = User.Register("Ait", "Tghrayt", "owner@example.com", "EUR", "fr", "Europe/Paris");
+        var member = User.Register("Other", "User", "member@example.com", "EUR", "fr", "Europe/Paris");
+        var household = Household.Create("Family", "EUR", owner.Id);
+        household.AddMember(member.Id, HouseholdRole.Member);
+        await households.AddAsync(household, CancellationToken.None);
+
+        var handler = new ChangeHouseholdMemberRoleHandler(households, new InMemoryUnitOfWork());
+
+        var result = await handler.HandleAsync(
+            new ChangeHouseholdMemberRoleCommand(household.Id.Value, owner.Id.Value, member.Id.Value, "Viewer"),
+            CancellationToken.None);
+
+        Assert.Contains(result.Members, membership =>
+            membership.UserId == member.Id.Value && membership.Role == "Viewer");
+    }
+
+    [Fact]
+    public async Task RemoveHouseholdMemberRejectsOwnerRemoval()
+    {
+        var households = new InMemoryHouseholdRepository();
+        var owner = User.Register("Ait", "Tghrayt", "owner@example.com", "EUR", "fr", "Europe/Paris");
+        var household = Household.Create("Family", "EUR", owner.Id);
+        await households.AddAsync(household, CancellationToken.None);
+
+        var handler = new RemoveHouseholdMemberHandler(households, new InMemoryUnitOfWork());
+
+        await Assert.ThrowsAsync<InvalidHouseholdMembershipException>(() =>
+            handler.HandleAsync(
+                new RemoveHouseholdMemberCommand(household.Id.Value, owner.Id.Value, owner.Id.Value),
+                CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task RemoveHouseholdMemberRemovesExistingMember()
+    {
+        var households = new InMemoryHouseholdRepository();
+        var owner = User.Register("Ait", "Tghrayt", "owner@example.com", "EUR", "fr", "Europe/Paris");
+        var member = User.Register("Other", "User", "member@example.com", "EUR", "fr", "Europe/Paris");
+        var household = Household.Create("Family", "EUR", owner.Id);
+        household.AddMember(member.Id, HouseholdRole.Member);
+        await households.AddAsync(household, CancellationToken.None);
+
+        var handler = new RemoveHouseholdMemberHandler(households, new InMemoryUnitOfWork());
+
+        var result = await handler.HandleAsync(
+            new RemoveHouseholdMemberCommand(household.Id.Value, owner.Id.Value, member.Id.Value),
+            CancellationToken.None);
+
+        Assert.DoesNotContain(result.Members, membership => membership.UserId == member.Id.Value);
+    }
+
+    [Fact]
+    public async Task MemberCannotManageHouseholdMembers()
+    {
+        var users = new InMemoryUserRepository();
+        var households = new InMemoryHouseholdRepository();
+        var owner = User.Register("Ait", "Tghrayt", "owner@example.com", "EUR", "fr", "Europe/Paris");
+        var member = User.Register("Other", "User", "member@example.com", "EUR", "fr", "Europe/Paris");
+        var invited = User.Register("Invited", "User", "invited@example.com", "EUR", "fr", "Europe/Paris");
+        var household = Household.Create("Family", "EUR", owner.Id);
+        household.AddMember(member.Id, HouseholdRole.Member);
+
+        await users.AddAsync(owner, CancellationToken.None);
+        await users.AddAsync(member, CancellationToken.None);
+        await users.AddAsync(invited, CancellationToken.None);
+        await households.AddAsync(household, CancellationToken.None);
+
+        var handler = new AddHouseholdMemberHandler(users, households, new InMemoryUnitOfWork());
+
+        await Assert.ThrowsAsync<IdentityForbiddenException>(() =>
+            handler.HandleAsync(
+                new AddHouseholdMemberCommand(household.Id.Value, member.Id.Value, invited.Id.Value, "Viewer"),
+                CancellationToken.None));
     }
 
     private sealed class InMemoryUserRepository : IUserRepository

@@ -40,11 +40,33 @@ Phase 1 exposes the first Identity endpoints:
 
 ```text
 POST /api/v1/identity/users
+GET /api/v1/identity/users/{userId}
+GET /api/v1/identity/users/me
+PUT /api/v1/identity/users/{userId}/profile
 POST /api/v1/identity/households
+GET /api/v1/identity/households/{householdId}
 GET /api/v1/identity/households/current?userId={userId}
+POST /api/v1/identity/households/{householdId}/members?actorUserId={actorUserId}
+PUT /api/v1/identity/households/{householdId}/members/{userId}/role?actorUserId={actorUserId}
+DELETE /api/v1/identity/households/{householdId}/members/{userId}?actorUserId={actorUserId}
 ```
 
-The `userId` query parameter is a temporary development bridge until JWT authentication provides the authenticated user id.
+The `userId` and `actorUserId` query parameters are temporary development bridges until JWT authentication provides the authenticated user id.
+Household member management is still checked against the target household: only Owner and Admin members can add members, change roles or remove members.
+
+Local Docker Compose disables endpoint authorization with:
+
+```text
+Authentication__Jwt__RequireAuthorization=false
+```
+
+Production should set:
+
+```text
+Authentication__Jwt__RequireAuthorization=true
+Authentication__Jwt__Authority=https://your-oidc-provider
+Authentication__Jwt__Audience=financeos-api
+```
 
 ## Web app
 
