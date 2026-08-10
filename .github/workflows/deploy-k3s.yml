@@ -86,10 +86,10 @@ jobs:
             rm -rf /tmp/financeos-deploy
             mkdir -p /tmp/financeos-deploy
             tar -xzf /tmp/financeos-k8s.tar.gz -C /tmp/financeos-deploy
-            kubectl apply -k /tmp/financeos-deploy/infrastructure/k8s/overlays/production
-            kubectl -n financeos set image deployment/financeos-gateway gateway=${{ env.GATEWAY_IMAGE }}:${{ env.IMAGE_TAG }}
-            kubectl -n financeos set image deployment/financeos-web web=${{ env.WEB_IMAGE }}:${{ env.IMAGE_TAG }}
-            kubectl -n financeos rollout status deployment/financeos-gateway
-            kubectl -n financeos rollout status deployment/financeos-web
+            sudo -n kubectl apply -k /tmp/financeos-deploy/infrastructure/k8s/overlays/production
+            sudo -n kubectl -n financeos set image deployment/financeos-gateway gateway=${{ env.GATEWAY_IMAGE }}:${{ env.IMAGE_TAG }}
+            sudo -n kubectl -n financeos set image deployment/financeos-web web=${{ env.WEB_IMAGE }}:${{ env.IMAGE_TAG }}
+            sudo -n kubectl -n financeos rollout status deployment/financeos-gateway
+            sudo -n kubectl -n financeos rollout status deployment/financeos-web
             rm -rf /tmp/financeos-deploy /tmp/financeos-k8s.tar.gz
           EOF

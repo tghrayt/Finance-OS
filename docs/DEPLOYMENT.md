@@ -55,7 +55,7 @@ The workflow uses `GITHUB_TOKEN` to push images to GHCR.
 The VM must have:
 
 - Git
-- k3s with `kubectl` available
+- k3s with `kubectl` available through passwordless sudo for the deployment user
 - access to GitHub Container Registry for FinanceOS images
 - Traefik and cert-manager kept as shared cluster services
 
@@ -79,12 +79,19 @@ ssh "$VM_USER@$VM_HOST"
 rm -rf /tmp/financeos-deploy
 mkdir -p /tmp/financeos-deploy
 tar -xzf /tmp/financeos-k8s.tar.gz -C /tmp/financeos-deploy
-kubectl apply -k /tmp/financeos-deploy/infrastructure/k8s/overlays/production
-kubectl -n financeos set image deployment/financeos-gateway gateway=ghcr.io/tghrayt/finance-os/gateway:$IMAGE_TAG
-kubectl -n financeos set image deployment/financeos-web web=ghcr.io/tghrayt/finance-os/web:$IMAGE_TAG
-kubectl -n financeos rollout status deployment/financeos-gateway
-kubectl -n financeos rollout status deployment/financeos-web
+sudo -n kubectl apply -k /tmp/financeos-deploy/infrastructure/k8s/overlays/production
+sudo -n kubectl -n financeos set image deployment/financeos-gateway gateway=ghcr.io/tghrayt/finance-os/gateway:$IMAGE_TAG
+sudo -n kubectl -n financeos set image deployment/financeos-web web=ghcr.io/tghrayt/finance-os/web:$IMAGE_TAG
+sudo -n kubectl -n financeos rollout status deployment/financeos-gateway
+sudo -n kubectl -n financeos rollout status deployment/financeos-web
 rm -rf /tmp/financeos-deploy /tmp/financeos-k8s.tar.gz
+```
+
+If the deployment user cannot use passwordless sudo, allow only kubectl for that user:
+
+```bash
+echo "$USER ALL=(root) NOPASSWD: /usr/local/bin/kubectl, /usr/bin/kubectl" | sudo tee /etc/sudoers.d/financeos-deploy
+sudo chmod 440 /etc/sudoers.d/financeos-deploy
 ```
 
 ## Ingress
