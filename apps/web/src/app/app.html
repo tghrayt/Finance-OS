@@ -157,23 +157,102 @@
         <header>
           <div>
             <span class="material-icons" aria-hidden="true">bolt</span>
-            <h2>Actions rapides</h2>
+            <h2>Actions</h2>
           </div>
         </header>
-        <div class="action-grid">
-          <button type="button">
-            <span class="material-icons" aria-hidden="true">add</span>
+        @if (actionMessage) {
+          <p class="action-message">{{ actionMessage }}</p>
+        }
+
+        <form class="action-form" [formGroup]="accountForm" (ngSubmit)="createAccount()">
+          <h3>Nouveau compte</h3>
+          <label>
+            Nom
+            <input type="text" formControlName="name" placeholder="Compte courant" />
+          </label>
+          <div class="form-grid">
+            <label>
+              Type
+              <select formControlName="type">
+                @for (type of accountTypes; track type) {
+                  <option [value]="type">{{ type }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              Solde initial
+              <input type="number" min="0" step="0.01" formControlName="initialBalance" />
+            </label>
+          </div>
+          <div class="form-grid">
+            <label>
+              Devise
+              <input type="text" maxlength="3" formControlName="currency" />
+            </label>
+            <label>
+              Banque
+              <input type="text" formControlName="institutionName" placeholder="Optionnel" />
+            </label>
+          </div>
+          <button type="submit" [disabled]="actionStatus === 'saving'">
+            <span class="material-icons" aria-hidden="true">add_card</span>
+            Ajouter le compte
+          </button>
+        </form>
+
+        <form class="action-form" [formGroup]="transactionForm" (ngSubmit)="createTransaction()">
+          <h3>Nouvelle transaction</h3>
+          <label>
             Compte
-          </button>
-          <button type="button">
+            <select formControlName="accountId">
+              <option value="">Selectionner</option>
+              @for (account of dashboard.accounts; track trackAccount($index, account)) {
+                <option [value]="account.accountId">{{ account.name }}</option>
+              }
+            </select>
+          </label>
+          <div class="form-grid">
+            <label>
+              Type
+              <select formControlName="type">
+                @for (type of transactionTypes; track type) {
+                  <option [value]="type">{{ type }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              Montant
+              <input type="number" min="0.01" step="0.01" formControlName="amount" />
+            </label>
+          </div>
+          <div class="form-grid">
+            <label>
+              Date
+              <input type="date" formControlName="transactionDate" />
+            </label>
+            <label>
+              Categorie
+              <select formControlName="categoryId">
+                <option value="">Aucune</option>
+                @for (category of dashboard.categories; track trackCategory($index, category)) {
+                  <option [value]="category.categoryId">{{ category.name }}</option>
+                }
+              </select>
+            </label>
+          </div>
+          <label>
+            Marchand
+            <input type="text" formControlName="merchant" placeholder="Optionnel" />
+          </label>
+          <label>
+            Note
+            <input type="text" formControlName="description" placeholder="Optionnel" />
+          </label>
+          <button type="submit" [disabled]="actionStatus === 'saving' || dashboard.accounts.length === 0">
             <span class="material-icons" aria-hidden="true">payments</span>
-            Transaction
+            Ajouter la transaction
           </button>
-          <button type="button">
-            <span class="material-icons" aria-hidden="true">flag</span>
-            Objectif
-          </button>
-        </div>
+        </form>
       </article>
     </section>
   }

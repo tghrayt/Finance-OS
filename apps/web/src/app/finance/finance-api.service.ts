@@ -41,6 +41,29 @@ export interface FinanceSnapshot {
   transactions: FinanceTransaction[];
 }
 
+export interface CreateAccountRequest {
+  householdId: string;
+  name: string;
+  type: string;
+  initialBalance: number;
+  currency: string;
+  institutionName: string | null;
+}
+
+export interface CreateTransactionRequest {
+  householdId: string;
+  accountId: string;
+  destinationAccountId: string | null;
+  type: string;
+  amount: number;
+  currency: string;
+  categoryId: string | null;
+  merchant: string | null;
+  description: string | null;
+  transactionDate: string;
+  correlationId: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class FinanceApiService {
   constructor(private readonly http: HttpClient) {}
@@ -55,5 +78,13 @@ export class FinanceApiService {
         params: householdParams.set('page', 1).set('pageSize', 8),
       }),
     });
+  }
+
+  createAccount(request: CreateAccountRequest): Observable<FinanceAccount> {
+    return this.http.post<FinanceAccount>(`${FINANCE_API_BASE_URL}/accounts`, request);
+  }
+
+  createTransaction(request: CreateTransactionRequest): Observable<FinanceTransaction> {
+    return this.http.post<FinanceTransaction>(`${FINANCE_API_BASE_URL}/transactions`, request);
   }
 }

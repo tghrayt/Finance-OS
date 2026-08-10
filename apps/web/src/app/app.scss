@@ -178,6 +178,8 @@ h1 {
 }
 
 .command-panel {
+  display: grid;
+  gap: 1rem;
   min-height: 10rem;
 }
 
@@ -304,10 +306,62 @@ h1 {
   height: 12rem;
 }
 
-.action-grid {
+.action-message {
+  background: rgba(197, 166, 87, 0.12);
+  border: 1px solid rgba(197, 166, 87, 0.22);
+  border-radius: 6px;
+  color: #f6dfa0;
+  font-size: 0.85rem;
+  padding: 0.75rem;
+}
+
+.action-form {
   display: grid;
   gap: 0.75rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.action-form h3 {
+  color: #ffffff;
+  font-size: 0.9rem;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.form-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+label {
+  color: #b8b09f;
+  display: grid;
+  font-size: 0.78rem;
+  gap: 0.35rem;
+}
+
+input,
+select {
+  background: rgba(244, 241, 232, 0.08);
+  border: 1px solid rgba(244, 241, 232, 0.16);
+  border-radius: 6px;
+  box-sizing: border-box;
+  color: #ffffff;
+  font: inherit;
+  min-height: 2.65rem;
+  outline: none;
+  padding: 0.65rem 0.75rem;
+  width: 100%;
+}
+
+select option {
+  background: #1c1f1b;
+  color: #ffffff;
+}
+
+input:focus,
+select:focus {
+  border-color: rgba(242, 207, 114, 0.76);
 }
 
 button {
@@ -328,6 +382,11 @@ button {
 
 button:hover {
   background: rgba(149, 199, 161, 0.14);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
 }
 
 @keyframes pulse {
@@ -374,7 +433,7 @@ button:hover {
   }
 
   .metrics-section,
-  .action-grid {
+  .form-grid {
     grid-template-columns: 1fr;
   }
 
