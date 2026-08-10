@@ -30,8 +30,8 @@ The deployment foundation is:
 - A separate deployment workflow runs after the CI workflow succeeds on `main`.
 - GitHub Actions builds and pushes Docker images to GitHub Container Registry.
 - GitHub Actions connects to the VM over SSH.
-- The VM pulls the latest repository state.
-- k3s applies the Kubernetes manifests from `infrastructure/k8s`.
+- GitHub Actions sends only the Kubernetes manifests to a temporary folder on the VM.
+- k3s applies the Kubernetes manifests from that temporary folder.
 - k3s updates the running deployments to the exact commit image tag.
 
 No production business feature is deployed in Phase 0.
@@ -43,7 +43,6 @@ Configure these repository secrets before enabling real deployment:
 - `VM_HOST`: public IP address or DNS name of the virtual machine.
 - `VM_USER`: SSH user used for deployment.
 - `VM_SSH_KEY`: private SSH key authorized on the VM.
-- `VM_APP_PATH`: absolute path of the FinanceOS checkout on the VM.
 
 The workflow uses `GITHUB_TOKEN` to push images to GHCR.
 
@@ -53,7 +52,6 @@ The VM must have:
 
 - Git
 - k3s with `kubectl` available
-- access to the FinanceOS GitHub repository
 - access to GitHub Container Registry for FinanceOS images
 - Traefik and cert-manager kept as shared cluster services
 
@@ -71,14 +69,18 @@ kubectl -n financeos create secret docker-registry ghcr-pull-secret \
 The deployment workflow runs:
 
 ```bash
-cd "$VM_APP_PATH"
-git fetch origin main
-git reset --hard origin/main
-kubectl apply -k infrastructure/k8s/overlays/production
+tar -czf financeos-k8s.tar.gz infrastructure/k8s
+scp financeos-k8s.tar.gz "$VM_USER@$VM_HOST:/tmp/financeos-k8s.tar.gz"
+ssh "$VM_USER@$VM_HOST"
+rm -rf /tmp/financeos-deploy
+mkdir -p /tmp/financeos-deploy
+tar -xzf /tmp/financeos-k8s.tar.gz -C /tmp/financeos-deploy
+kubectl apply -k /tmp/financeos-deploy/infrastructure/k8s/overlays/production
 kubectl -n financeos set image deployment/financeos-gateway gateway=ghcr.io/tghrayt/finance-os/gateway:$IMAGE_TAG
 kubectl -n financeos set image deployment/financeos-web web=ghcr.io/tghrayt/finance-os/web:$IMAGE_TAG
 kubectl -n financeos rollout status deployment/financeos-gateway
 kubectl -n financeos rollout status deployment/financeos-web
+rm -rf /tmp/financeos-deploy /tmp/financeos-k8s.tar.gz
 ```
 
 ## Ingress

@@ -57,9 +57,8 @@ jobs:
           VM_HOST: ${{ secrets.VM_HOST }}
           VM_USER: ${{ secrets.VM_USER }}
           VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
-          VM_APP_PATH: ${{ secrets.VM_APP_PATH }}
         run: |
-          if [ -z "$VM_HOST" ] || [ -z "$VM_USER" ] || [ -z "$VM_SSH_KEY" ] || [ -z "$VM_APP_PATH" ]; then
+          if [ -z "$VM_HOST" ] || [ -z "$VM_USER" ] || [ -z "$VM_SSH_KEY" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
             echo "VM deployment secrets are not fully configured. Skipping k3s deployment."
           else
@@ -77,14 +76,17 @@ jobs:
       - name: Deploy to k3s
         if: steps.vm_config.outputs.configured == 'true'
         run: |
+          tar -czf financeos-k8s.tar.gz infrastructure/k8s
+          scp -i ~/.ssh/financeos_deploy_key financeos-k8s.tar.gz "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/tmp/financeos-k8s.tar.gz"
           ssh -i ~/.ssh/financeos_deploy_key "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" << 'EOF'
             set -e
-            cd "${{ secrets.VM_APP_PATH }}"
-            git fetch origin main
-            git reset --hard origin/main
-            kubectl apply -k infrastructure/k8s/overlays/production
+            rm -rf /tmp/financeos-deploy
+            mkdir -p /tmp/financeos-deploy
+            tar -xzf /tmp/financeos-k8s.tar.gz -C /tmp/financeos-deploy
+            kubectl apply -k /tmp/financeos-deploy/infrastructure/k8s/overlays/production
             kubectl -n financeos set image deployment/financeos-gateway gateway=${{ env.GATEWAY_IMAGE }}:${{ env.IMAGE_TAG }}
             kubectl -n financeos set image deployment/financeos-web web=${{ env.WEB_IMAGE }}:${{ env.IMAGE_TAG }}
             kubectl -n financeos rollout status deployment/financeos-gateway
             kubectl -n financeos rollout status deployment/financeos-web
+            rm -rf /tmp/financeos-deploy /tmp/financeos-k8s.tar.gz
           EOF
