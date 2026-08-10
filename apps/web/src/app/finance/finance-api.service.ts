@@ -64,6 +64,13 @@ export interface CreateTransactionRequest {
   correlationId: string | null;
 }
 
+export interface CreateCategoryRequest {
+  householdId: string;
+  name: string;
+  parentCategoryId: string | null;
+  icon: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class FinanceApiService {
   constructor(private readonly http: HttpClient) {}
@@ -86,5 +93,9 @@ export class FinanceApiService {
 
   createTransaction(request: CreateTransactionRequest): Observable<FinanceTransaction> {
     return this.http.post<FinanceTransaction>(`${FINANCE_API_BASE_URL}/transactions`, request);
+  }
+
+  createCategory(request: CreateCategoryRequest): Observable<FinanceCategory> {
+    return this.http.post<FinanceCategory>(`${FINANCE_API_BASE_URL}/categories`, request);
   }
 }

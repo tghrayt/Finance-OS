@@ -200,6 +200,24 @@
           </button>
         </form>
 
+        <form class="action-form" [formGroup]="categoryForm" (ngSubmit)="createCategory()">
+          <h3>Nouvelle categorie</h3>
+          <div class="form-grid">
+            <label>
+              Nom
+              <input type="text" formControlName="name" placeholder="Courses" />
+            </label>
+            <label>
+              Icone
+              <input type="text" formControlName="icon" placeholder="shopping_cart" />
+            </label>
+          </div>
+          <button type="submit" [disabled]="actionStatus === 'saving'">
+            <span class="material-icons" aria-hidden="true">new_label</span>
+            Ajouter la categorie
+          </button>
+        </form>
+
         <form class="action-form" [formGroup]="transactionForm" (ngSubmit)="createTransaction()">
           <h3>Nouvelle transaction</h3>
           <label>

@@ -68,6 +68,11 @@ export class App {
     transactionDate: [new Date().toISOString().slice(0, 10), Validators.required],
   });
 
+  protected readonly categoryForm = this.formBuilder.nonNullable.group({
+    name: ['', [Validators.required, Validators.maxLength(120)]],
+    icon: ['label', [Validators.required, Validators.maxLength(64)]],
+  });
+
   constructor() {
     this.dashboard$ = this.refreshDashboard$.pipe(
       startWith(undefined),
@@ -184,6 +189,37 @@ export class App {
         },
         error: () => {
           this.actionMessage = 'Creation de la transaction impossible pour le moment.';
+        },
+      });
+  }
+
+  protected createCategory(): void {
+    if (this.categoryForm.invalid || this.actionStatus === 'saving') {
+      this.categoryForm.markAllAsTouched();
+      return;
+    }
+
+    const value = this.categoryForm.getRawValue();
+    this.actionStatus = 'saving';
+    this.actionMessage = '';
+
+    this.financeApi
+      .createCategory({
+        householdId: this.householdId,
+        name: value.name.trim(),
+        parentCategoryId: null,
+        icon: value.icon.trim(),
+      })
+      .pipe(finalize(() => (this.actionStatus = 'idle')))
+      .subscribe({
+        next: (category) => {
+          this.actionMessage = `Categorie "${category.name}" creee.`;
+          this.transactionForm.patchValue({ categoryId: category.categoryId });
+          this.categoryForm.reset({ name: '', icon: 'label' });
+          this.refreshDashboard$.next();
+        },
+        error: () => {
+          this.actionMessage = 'Creation de la categorie impossible pour le moment.';
         },
       });
   }
