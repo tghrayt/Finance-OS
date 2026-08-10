@@ -25,6 +25,10 @@ jobs:
         with:
           node-version: '20.19.4'
           cache: npm
-      - run: npm ci
-      - run: npm --workspace apps/web run build
-      - run: npm --workspace apps/web run test -- --watch=false
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci --include=optional
+        working-directory: apps/web
+      - run: npm run build
+        working-directory: apps/web
+      - run: npm run test -- --watch=false
+        working-directory: apps/web
