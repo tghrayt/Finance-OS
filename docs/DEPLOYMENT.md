@@ -28,6 +28,7 @@ The deployment foundation is:
 
 - GitHub Actions validates backend and web builds.
 - A separate deployment workflow runs after the CI workflow succeeds on `main`.
+- The deployment workflow can also be started manually from GitHub Actions with **Run workflow**.
 - GitHub Actions builds and pushes Docker images to GitHub Container Registry.
 - GitHub Actions connects to the VM over SSH.
 - GitHub Actions sends only the Kubernetes manifests to a temporary folder on the VM.
@@ -66,7 +67,7 @@ kubectl -n financeos create secret docker-registry ghcr-pull-secret \
 
 ## Deployment command
 
-The deployment workflow runs:
+The deployment workflow can run automatically after `ci`, or manually from GitHub Actions. It runs:
 
 ```bash
 tar -czf financeos-k8s.tar.gz infrastructure/k8s

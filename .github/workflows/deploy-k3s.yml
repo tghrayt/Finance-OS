@@ -1,6 +1,7 @@
 name: deploy-k3s
 
 on:
+  workflow_dispatch:
   workflow_run:
     workflows: [ci]
     types: [completed]
@@ -8,20 +9,20 @@ on:
 
 jobs:
   deploy:
-    if: github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment: production
     permissions:
       contents: read
       packages: write
     env:
-      IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
+      IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
       GATEWAY_IMAGE: ghcr.io/${{ github.repository_owner }}/finance-os/gateway
       WEB_IMAGE: ghcr.io/${{ github.repository_owner }}/finance-os/web
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - uses: docker/setup-buildx-action@v3
 
