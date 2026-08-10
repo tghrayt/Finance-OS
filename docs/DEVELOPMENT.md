@@ -70,6 +70,29 @@ Authentication__Jwt__Audience=financeos-api
 
 ## Web app
 
+## Finance database and API
+
+Finance persistence uses EF Core with PostgreSQL and the `finance` schema.
+
+Generate a migration:
+
+```powershell
+dotnet ef migrations add MigrationName --project backend\services\finance\FinanceOS.Finance.Infrastructure\FinanceOS.Finance.Infrastructure.csproj --startup-project backend\services\finance\FinanceOS.Finance.Api\FinanceOS.Finance.Api.csproj --context FinanceDbContext --output-dir Persistence\Migrations
+```
+
+Phase 2 exposes:
+
+```text
+POST /api/v1/finance/accounts
+GET /api/v1/finance/accounts?householdId={householdId}
+POST /api/v1/finance/categories
+GET /api/v1/finance/categories?householdId={householdId}
+POST /api/v1/finance/transactions
+GET /api/v1/finance/transactions?householdId={householdId}&page=1&pageSize=50
+```
+
+Phase 3 writes `TransactionCreatedV1` to `finance.outbox_messages` in the same database transaction. The background outbox publisher publishes pending events to RabbitMQ through MassTransit.
+
 ```powershell
 npm install
 npm --workspace apps/web run build

@@ -1,8 +1,8 @@
 # Events
 
-FinanceOS will use explicit versioned integration events between services.
+FinanceOS uses explicit versioned integration events between services.
 
-Phase 0 does not define published event contracts yet. Later event contracts must include relevant metadata such as:
+Event contracts live in `backend/contracts/FinanceOS.Contracts` and must include relevant metadata such as:
 
 - EventId
 - OccurredAt
@@ -10,3 +10,24 @@ Phase 0 does not define published event contracts yet. Later event contracts mus
 - HouseholdId
 
 Domain events and integration events must remain distinct.
+
+## Finance
+
+`TransactionCreatedV1` is written by Finance Service through the transactional outbox when a transaction is persisted.
+
+Consumers such as Budget, Forecast, Notification and future Dashboard projections must treat this event as eventually consistent and idempotent.
+
+Fields:
+
+- `EventId`
+- `OccurredAt`
+- `CorrelationId`
+- `TransactionId`
+- `HouseholdId`
+- `AccountId`
+- `DestinationAccountId`
+- `Type`
+- `Amount`
+- `Currency`
+- `CategoryId`
+- `TransactionDate`

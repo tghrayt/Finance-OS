@@ -10,6 +10,10 @@ public sealed class RepositoryFoundationTests
     [InlineData("backend/services/identity/FinanceOS.Identity.Application/FinanceOS.Identity.Application.csproj")]
     [InlineData("backend/services/identity/FinanceOS.Identity.Infrastructure/FinanceOS.Identity.Infrastructure.csproj")]
     [InlineData("backend/services/finance/FinanceOS.Finance.Api/FinanceOS.Finance.Api.csproj")]
+    [InlineData("backend/services/finance/FinanceOS.Finance.Domain/FinanceOS.Finance.Domain.csproj")]
+    [InlineData("backend/services/finance/FinanceOS.Finance.Application/FinanceOS.Finance.Application.csproj")]
+    [InlineData("backend/services/finance/FinanceOS.Finance.Infrastructure/FinanceOS.Finance.Infrastructure.csproj")]
+    [InlineData("backend/contracts/FinanceOS.Contracts/FinanceOS.Contracts.csproj")]
     [InlineData("backend/services/budget/FinanceOS.Budget.Api/FinanceOS.Budget.Api.csproj")]
     [InlineData("backend/services/forecast/FinanceOS.Forecast.Api/FinanceOS.Forecast.Api.csproj")]
     [InlineData("backend/services/notification/FinanceOS.Notification.Api/FinanceOS.Notification.Api.csproj")]
@@ -45,6 +49,24 @@ public sealed class RepositoryFoundationTests
 
         Assert.Contains(
             Directory.EnumerateFiles(migrationsPath, "*InitialIdentitySchema.cs"),
+            path => !path.EndsWith(".Designer.cs", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void FinanceInitialMigrationExists()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var migrationsPath = Path.Combine(
+            repositoryRoot.FullName,
+            "backend",
+            "services",
+            "finance",
+            "FinanceOS.Finance.Infrastructure",
+            "Persistence",
+            "Migrations");
+
+        Assert.Contains(
+            Directory.EnumerateFiles(migrationsPath, "*InitialFinanceSchema.cs"),
             path => !path.EndsWith(".Designer.cs", StringComparison.Ordinal));
     }
 
