@@ -17,6 +17,7 @@ public sealed class RepositoryFoundationTests
     [InlineData("docs/DEPLOYMENT.md")]
     [InlineData(".github/workflows/deploy-k3s.yml")]
     [InlineData("infrastructure/k8s/overlays/production/kustomization.yaml")]
+    [InlineData("infrastructure/k8s/overlays/production/ingress.yaml")]
     [InlineData("infrastructure/k8s/overlays/production/ingress.example.yaml")]
     public void PhaseZeroFoundationFilesExist(string relativePath)
     {

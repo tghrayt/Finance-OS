@@ -96,8 +96,14 @@ sudo chmod 440 /etc/sudoers.d/financeos-deploy
 
 ## Ingress
 
-Traefik and cert-manager are already present on the VM. The production overlay contains an example ingress at `infrastructure/k8s/overlays/production/ingress.example.yaml`.
+Traefik and cert-manager are already present on the VM. FinanceOS is exposed through:
 
-Do not apply it as-is. Rename it to `ingress.yaml`, replace `financeos.example.com` with the real domain, choose the real cert-manager ClusterIssuer, and add it to the production `kustomization.yaml`.
+```text
+https://financeos.51-210-40-78.sslip.io
+```
+
+The production Ingress uses the `letsencrypt-http` ClusterIssuer and stores the certificate in the `financeos-tls` secret.
+
+The production overlay also keeps `infrastructure/k8s/overlays/production/ingress.example.yaml` as a reference for future custom domains.
 
 This will be refined later with environment-specific secrets, database migrations, rollback and deeper health verification.
