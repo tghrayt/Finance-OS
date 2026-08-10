@@ -28,6 +28,8 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
       - run: npm install --include=optional
         working-directory: apps/web
+      - run: npm ls @rollup/rollup-linux-x64-gnu
+        working-directory: apps/web
       - run: npm run build
         working-directory: apps/web
       - run: npm run test -- --watch=false
