@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: financeos-finance-api
+  namespace: financeos
+  labels:
+    app.kubernetes.io/name: financeos-finance-api
+    app.kubernetes.io/part-of: financeos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: financeos-finance-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: financeos-finance-api
+        app.kubernetes.io/part-of: financeos
+    spec:
+      containers:
+        - name: finance-api
+          image: ghcr.io/tghrayt/finance-os/finance-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ConnectionStrings__FinanceDatabase
+              valueFrom:
+                secretKeyRef:
+                  name: financeos-finance-api-secrets
+                  key: finance-database
+            - name: RabbitMQ__Host
+              valueFrom:
+                secretKeyRef:
+                  name: financeos-finance-api-secrets
+                  key: rabbitmq-host
+            - name: RabbitMQ__Username
+              valueFrom:
+                secretKeyRef:
+                  name: financeos-finance-api-secrets
+                  key: rabbitmq-username
+            - name: RabbitMQ__Password
+              valueFrom:
+                secretKeyRef:
+                  name: financeos-finance-api-secrets
+                  key: rabbitmq-password
+            - name: Finance__ApplyMigrationsOnStartup
+              value: "true"
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: financeos-finance-api
+  namespace: financeos
+  labels:
+    app.kubernetes.io/name: financeos-finance-api
+    app.kubernetes.io/part-of: financeos
+spec:
+  selector:
+    app.kubernetes.io/name: financeos-finance-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

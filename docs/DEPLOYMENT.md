@@ -22,7 +22,7 @@ The VM already contains:
 
 FinanceOS must be isolated from the existing workloads in its own namespace.
 
-## Phase 0 target
+## Deployment target
 
 The deployment foundation is:
 
@@ -34,8 +34,7 @@ The deployment foundation is:
 - GitHub Actions sends only the Kubernetes manifests to a temporary folder on the VM.
 - k3s applies the Kubernetes manifests from that temporary folder.
 - k3s updates the running deployments to the exact commit image tag.
-
-No production business feature is deployed in Phase 0.
+- `financeos-finance-api` is deployed when its Kubernetes secrets and backing PostgreSQL/RabbitMQ services are available.
 
 ## Required GitHub secrets
 
@@ -81,8 +80,10 @@ mkdir -p /tmp/financeos-deploy
 tar -xzf /tmp/financeos-k8s.tar.gz -C /tmp/financeos-deploy
 sudo -n kubectl apply -k /tmp/financeos-deploy/infrastructure/k8s/overlays/production
 sudo -n kubectl -n financeos set image deployment/financeos-gateway gateway=ghcr.io/tghrayt/finance-os/gateway:$IMAGE_TAG
+sudo -n kubectl -n financeos set image deployment/financeos-finance-api finance-api=ghcr.io/tghrayt/finance-os/finance-api:$IMAGE_TAG
 sudo -n kubectl -n financeos set image deployment/financeos-web web=ghcr.io/tghrayt/finance-os/web:$IMAGE_TAG
 sudo -n kubectl -n financeos rollout status deployment/financeos-gateway
+sudo -n kubectl -n financeos rollout status deployment/financeos-finance-api
 sudo -n kubectl -n financeos rollout status deployment/financeos-web
 rm -rf /tmp/financeos-deploy /tmp/financeos-k8s.tar.gz
 ```
@@ -106,4 +107,21 @@ The production Ingress uses the `letsencrypt-http` ClusterIssuer and stores the 
 
 The production overlay also keeps `infrastructure/k8s/overlays/production/ingress.example.yaml` as a reference for future custom domains.
 
-This will be refined later with environment-specific secrets, database migrations, rollback and deeper health verification.
+## Finance API Kubernetes secrets
+
+Before deploying `financeos-finance-api`, create the runtime secret in the VM cluster. Replace the values with the actual PostgreSQL and RabbitMQ endpoints used by the `financeos` namespace.
+
+```bash
+sudo kubectl create namespace financeos --dry-run=client -o yaml | sudo kubectl apply -f -
+
+sudo kubectl -n financeos create secret generic financeos-finance-api-secrets \
+  --from-literal=finance-database='Host=POSTGRES_HOST;Port=5432;Database=financeos;Username=financeos;Password=CHANGE_ME' \
+  --from-literal=rabbitmq-host='RABBITMQ_HOST' \
+  --from-literal=rabbitmq-username='guest' \
+  --from-literal=rabbitmq-password='CHANGE_ME' \
+  --dry-run=client -o yaml | sudo kubectl apply -f -
+```
+
+`Finance__ApplyMigrationsOnStartup=true` is configured in the deployment so the initial `finance` schema migration can be applied automatically when the service starts.
+
+This will be refined later with dedicated database/RabbitMQ manifests or managed services, rollback and deeper health verification.

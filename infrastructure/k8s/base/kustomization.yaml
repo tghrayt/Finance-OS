@@ -3,4 +3,5 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - gateway.yaml
+  - finance-api.yaml
   - web.yaml
