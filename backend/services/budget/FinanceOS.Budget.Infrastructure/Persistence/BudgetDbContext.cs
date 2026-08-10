@@ -7,9 +7,12 @@ public sealed class BudgetDbContext(DbContextOptions<BudgetDbContext> options) :
 {
     public DbSet<MonthlyBudget> MonthlyBudgets => Set<MonthlyBudget>();
 
+    public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("budget");
         modelBuilder.ApplyConfiguration(new MonthlyBudgetConfiguration());
+        modelBuilder.ApplyConfiguration(new InboxMessageConfiguration());
     }
 }

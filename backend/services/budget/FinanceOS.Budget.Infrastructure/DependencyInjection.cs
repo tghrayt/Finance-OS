@@ -1,6 +1,8 @@
 using FinanceOS.Budget.Application.Abstractions;
+using FinanceOS.Budget.Infrastructure.Messaging;
 using FinanceOS.Budget.Infrastructure.Persistence;
 using FinanceOS.Budget.Infrastructure.Persistence.Repositories;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +20,23 @@ public static class DependencyInjection
         services.AddDbContext<BudgetDbContext>(options => options.UseNpgsql(connectionString));
         services.AddScoped<IMonthlyBudgetRepository, MonthlyBudgetRepository>();
         services.AddScoped<IBudgetUnitOfWork, BudgetUnitOfWork>();
+
+        services.AddMassTransit(bus =>
+        {
+            bus.AddConsumer<TransactionCreatedConsumer>();
+            bus.UsingRabbitMq((context, cfg) =>
+            {
+                var host = configuration["RabbitMQ:Host"] ?? "localhost";
+                var username = configuration["RabbitMQ:Username"] ?? "guest";
+                var password = configuration["RabbitMQ:Password"] ?? "guest";
+                cfg.Host(host, "/", h =>
+                {
+                    h.Username(username);
+                    h.Password(password);
+                });
+                cfg.ConfigureEndpoints(context);
+            });
+        });
 
         return services;
     }
