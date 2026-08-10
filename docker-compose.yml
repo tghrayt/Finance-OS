@@ -1,0 +1,96 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: financeos
+      POSTGRES_PASSWORD: financeos
+      POSTGRES_DB: financeos
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U financeos"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8-alpine
+    ports:
+      - "6379:6379"
+
+  seq:
+    image: datalust/seq:2026
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "5341:80"
+
+  otel-collector:
+    image: otel/opentelemetry-collector:0.136.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./infrastructure/otel/otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+
+  gateway:
+    build:
+      context: .
+      dockerfile: backend/gateway/FinanceOS.Gateway/Dockerfile
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+    ports:
+      - "8080:8080"
+    depends_on:
+      - identity-api
+      - finance-api
+      - budget-api
+      - forecast-api
+      - notification-api
+
+  identity-api:
+    build:
+      context: .
+      dockerfile: backend/services/identity/FinanceOS.Identity.Api/Dockerfile
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+
+  finance-api:
+    build:
+      context: .
+      dockerfile: backend/services/finance/FinanceOS.Finance.Api/Dockerfile
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+
+  budget-api:
+    build:
+      context: .
+      dockerfile: backend/services/budget/FinanceOS.Budget.Api/Dockerfile
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+
+  forecast-api:
+    build:
+      context: .
+      dockerfile: backend/services/forecast/FinanceOS.Forecast.Api/Dockerfile
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+
+  notification-api:
+    build:
+      context: .
+      dockerfile: backend/services/notification/FinanceOS.Notification.Api/Dockerfile
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317

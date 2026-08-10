@@ -1,0 +1,13 @@
+bin/
+obj/
+.vs/
+.vscode/
+node_modules/
+dist/
+.angular/
+coverage/
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db

@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: financeos-gateway
+  namespace: financeos
+  labels:
+    app.kubernetes.io/name: financeos-gateway
+    app.kubernetes.io/part-of: financeos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: financeos-gateway
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: financeos-gateway
+        app.kubernetes.io/part-of: financeos
+    spec:
+      containers:
+        - name: gateway
+          image: ghcr.io/tghrayt/finance-os/gateway:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: financeos-gateway
+  namespace: financeos
+  labels:
+    app.kubernetes.io/name: financeos-gateway
+    app.kubernetes.io/part-of: financeos
+spec:
+  selector:
+    app.kubernetes.io/name: financeos-gateway
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
