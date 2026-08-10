@@ -58,12 +58,14 @@ jobs:
           VM_HOST: ${{ secrets.VM_HOST }}
           VM_USER: ${{ secrets.VM_USER }}
           VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          VM_SSH_PORT: ${{ secrets.VM_SSH_PORT }}
         run: |
           if [ -z "$VM_HOST" ] || [ -z "$VM_USER" ] || [ -z "$VM_SSH_KEY" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
             echo "VM deployment secrets are not fully configured. Skipping k3s deployment."
           else
             echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "port=${VM_SSH_PORT:-22}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Configure SSH
@@ -72,14 +74,14 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/financeos_deploy_key
           chmod 600 ~/.ssh/financeos_deploy_key
-          ssh-keyscan -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -T 20 -p "${{ steps.vm_config.outputs.port }}" -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Deploy to k3s
         if: steps.vm_config.outputs.configured == 'true'
         run: |
           tar -czf financeos-k8s.tar.gz infrastructure/k8s
-          scp -i ~/.ssh/financeos_deploy_key financeos-k8s.tar.gz "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/tmp/financeos-k8s.tar.gz"
-          ssh -i ~/.ssh/financeos_deploy_key "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" << 'EOF'
+          scp -P "${{ steps.vm_config.outputs.port }}" -i ~/.ssh/financeos_deploy_key financeos-k8s.tar.gz "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/tmp/financeos-k8s.tar.gz"
+          ssh -p "${{ steps.vm_config.outputs.port }}" -i ~/.ssh/financeos_deploy_key "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" << 'EOF'
             set -e
             rm -rf /tmp/financeos-deploy
             mkdir -p /tmp/financeos-deploy

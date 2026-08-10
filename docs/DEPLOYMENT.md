@@ -44,8 +44,11 @@ Configure these repository secrets before enabling real deployment:
 - `VM_HOST`: public IP address or DNS name of the virtual machine.
 - `VM_USER`: SSH user used for deployment.
 - `VM_SSH_KEY`: private SSH key authorized on the VM.
+- `VM_SSH_PORT`: optional SSH port. Defaults to `22` when absent.
 
 The workflow uses `GITHUB_TOKEN` to push images to GHCR.
+
+`VM_HOST` must contain only the host, for example `203.0.113.10` or `server.example.com`. Do not include `ssh://`, `user@`, or a port in `VM_HOST`; use `VM_USER` and `VM_SSH_PORT` for those.
 
 ## VM prerequisites
 
