@@ -50,10 +50,16 @@ describe('App', () => {
   });
 
   function flushFinanceSnapshot(): void {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
     http.expectOne('/api/v1/finance/accounts?householdId=00000000-0000-0000-0000-000000000000').flush([]);
     http.expectOne('/api/v1/finance/categories?householdId=00000000-0000-0000-0000-000000000000').flush([]);
     http
       .expectOne('/api/v1/finance/transactions?householdId=00000000-0000-0000-0000-000000000000&page=1&pageSize=8')
       .flush([]);
+    http
+      .expectOne(`/api/v1/budget/monthly-budgets/current?householdId=00000000-0000-0000-0000-000000000000&year=${year}&month=${month}`)
+      .flush('Budget was not found.', { status: 404, statusText: 'Not Found' });
   }
 });

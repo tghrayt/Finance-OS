@@ -55,6 +55,11 @@
         <p>Flux net</p>
         <strong>{{ dashboard.metrics.netFlow | currency: 'EUR' : 'symbol' : '1.0-0' }}</strong>
       </article>
+      <article class="metric-card">
+        <span class="material-icons" aria-hidden="true">pie_chart</span>
+        <p>Budget consomme</p>
+        <strong>{{ dashboard.metrics.budgetConsumption | percent: '1.0-0' }}</strong>
+      </article>
     </section>
 
     <section class="workspace-grid" aria-label="Espace financier">
@@ -115,6 +120,58 @@
               <span>{{ category.icon }} {{ category.name }}</span>
             }
           </div>
+        }
+      </article>
+
+      <article class="panel budget-panel">
+        <header>
+          <div>
+            <span class="material-icons" aria-hidden="true">savings</span>
+            <h2>Budget du mois</h2>
+          </div>
+          @if (dashboard.budget) {
+            <strong>{{ dashboard.budget.consumptionRatio | percent: '1.0-0' }}</strong>
+          }
+        </header>
+
+        @if (dashboard.status === 'loading') {
+          <div class="skeleton-chart" aria-label="Chargement du budget"></div>
+        } @else if (!dashboard.budget) {
+          <div class="empty-state">
+            <span class="material-icons" aria-hidden="true">request_quote</span>
+            <p>Aucun budget pour ce mois.</p>
+          </div>
+        } @else {
+          <div class="budget-summary">
+            <div>
+              <span>Consomme</span>
+              <strong>{{ dashboard.budget.actualAmount | currency: dashboard.budget.currency : 'symbol' : '1.0-0' }}</strong>
+            </div>
+            <div>
+              <span>Prevu</span>
+              <strong>{{ dashboard.budget.totalBudget | currency: dashboard.budget.currency : 'symbol' : '1.0-0' }}</strong>
+            </div>
+          </div>
+          <div class="budget-progress" aria-label="Progression du budget">
+            <span [style.width.%]="dashboard.budget.consumptionRatio * 100"></span>
+          </div>
+          @if (dashboard.budget.allocations.length === 0) {
+            <div class="empty-state compact">
+              <p>Aucune allocation par categorie.</p>
+            </div>
+          } @else {
+            <div class="allocation-list">
+              @for (allocation of dashboard.budget.allocations; track allocation.allocationId) {
+                <div class="allocation-row">
+                  <div>
+                    <strong>{{ allocationCategoryName(allocation, dashboard.categories) }}</strong>
+                    <span>{{ allocation.actualAmount | currency: allocation.currency : 'symbol' : '1.0-0' }} / {{ allocation.plannedAmount | currency: allocation.currency : 'symbol' : '1.0-0' }}</span>
+                  </div>
+                  <b>{{ allocation.consumptionRatio | percent: '1.0-0' }}</b>
+                </div>
+              }
+            </div>
+          }
         }
       </article>
 
@@ -215,6 +272,47 @@
           <button type="submit" [disabled]="actionStatus === 'saving'">
             <span class="material-icons" aria-hidden="true">new_label</span>
             Ajouter la categorie
+          </button>
+        </form>
+
+        <form class="action-form" [formGroup]="budgetForm" (ngSubmit)="createBudget()">
+          <h3>Budget mensuel</h3>
+          <div class="form-grid">
+            <label>
+              Budget total
+              <input type="number" min="0.01" step="0.01" formControlName="totalBudget" />
+            </label>
+            <label>
+              Devise
+              <input type="text" maxlength="3" formControlName="currency" />
+            </label>
+          </div>
+          <button type="submit" [disabled]="actionStatus === 'saving' || !!dashboard.budget">
+            <span class="material-icons" aria-hidden="true">request_quote</span>
+            Creer le budget
+          </button>
+        </form>
+
+        <form class="action-form" [formGroup]="allocationForm" (ngSubmit)="setBudgetAllocation(dashboard.budget)">
+          <h3>Allocation budgetaire</h3>
+          <div class="form-grid">
+            <label>
+              Categorie
+              <select formControlName="categoryId">
+                <option value="">Selectionner</option>
+                @for (category of dashboard.categories; track trackCategory($index, category)) {
+                  <option [value]="category.categoryId">{{ category.name }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              Montant prevu
+              <input type="number" min="0.01" step="0.01" formControlName="plannedAmount" />
+            </label>
+          </div>
+          <button type="submit" [disabled]="actionStatus === 'saving' || !dashboard.budget || dashboard.categories.length === 0">
+            <span class="material-icons" aria-hidden="true">playlist_add_check</span>
+            Definir l'allocation
           </button>
         </form>
 

@@ -1,9 +1,11 @@
-import { AsyncPipe, CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
+import { AsyncPipe, CurrencyPipe, DatePipe, DecimalPipe, PercentPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
-import { catchError, finalize, map, Observable, of, shareReplay, startWith, Subject, switchMap } from 'rxjs';
+import { catchError, finalize, forkJoin, map, Observable, of, shareReplay, startWith, Subject, switchMap, throwError } from 'rxjs';
 
+import { BudgetApiService, MonthlyBudget } from './budget/budget-api.service';
 import {
   FinanceAccount,
   FinanceApiService,
@@ -21,6 +23,7 @@ interface DashboardMetrics {
   netFlow: number;
   activeAccounts: number;
   categoryCount: number;
+  budgetConsumption: number;
 }
 
 interface DashboardState {
@@ -28,13 +31,14 @@ interface DashboardState {
   accounts: FinanceAccount[];
   categories: FinanceCategory[];
   transactions: FinanceTransaction[];
+  budget: MonthlyBudget | null;
   metrics: DashboardMetrics;
   errorMessage?: string;
 }
 
 @Component({
   selector: 'app-root',
-  imports: [AsyncPipe, CurrencyPipe, DatePipe, DecimalPipe, ReactiveFormsModule, RouterOutlet],
+  imports: [AsyncPipe, CurrencyPipe, DatePipe, DecimalPipe, PercentPipe, ReactiveFormsModule, RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -46,8 +50,10 @@ export class App {
   protected actionStatus: 'idle' | 'saving' = 'idle';
   protected actionMessage = '';
   private readonly financeApi = inject(FinanceApiService);
+  private readonly budgetApi = inject(BudgetApiService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly refreshDashboard$ = new Subject<void>();
+  private readonly now = new Date();
 
   protected readonly accountForm = this.formBuilder.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(120)]],
@@ -73,12 +79,27 @@ export class App {
     icon: ['label', [Validators.required, Validators.maxLength(64)]],
   });
 
+  protected readonly budgetForm = this.formBuilder.nonNullable.group({
+    totalBudget: [1500, [Validators.required, Validators.min(0.01)]],
+    currency: ['EUR', [Validators.required, Validators.minLength(3), Validators.maxLength(3)]],
+  });
+
+  protected readonly allocationForm = this.formBuilder.nonNullable.group({
+    categoryId: ['', Validators.required],
+    plannedAmount: [100, [Validators.required, Validators.min(0.01)]],
+  });
+
   constructor() {
     this.dashboard$ = this.refreshDashboard$.pipe(
       startWith(undefined),
       switchMap(() =>
-        this.financeApi.getSnapshot(this.householdId).pipe(
-          map((snapshot) => this.toReadyState(snapshot)),
+        forkJoin({
+          finance: this.financeApi.getSnapshot(this.householdId),
+          budget: this.budgetApi
+            .getCurrentBudget(this.householdId, this.now.getFullYear(), this.now.getMonth() + 1)
+            .pipe(catchError((error: unknown) => (this.isNotFound(error) ? of(null) : throwError(() => error)))),
+        }).pipe(
+          map(({ finance, budget }) => this.toReadyState(finance, budget)),
           startWith(this.toLoadingState()),
           catchError(() =>
             of({
@@ -107,6 +128,10 @@ export class App {
 
   protected categoryName(transaction: FinanceTransaction, categories: FinanceCategory[]): string {
     return categories.find((category) => category.categoryId === transaction.categoryId)?.name ?? 'Non categorise';
+  }
+
+  protected allocationCategoryName(allocation: { categoryId: string }, categories: FinanceCategory[]): string {
+    return categories.find((category) => category.categoryId === allocation.categoryId)?.name ?? 'Categorie';
   }
 
   protected createAccount(): void {
@@ -224,11 +249,66 @@ export class App {
       });
   }
 
-  private toReadyState(snapshot: FinanceSnapshot): DashboardState {
+  protected createBudget(): void {
+    if (this.budgetForm.invalid || this.actionStatus === 'saving') {
+      this.budgetForm.markAllAsTouched();
+      return;
+    }
+
+    const value = this.budgetForm.getRawValue();
+    this.actionStatus = 'saving';
+    this.actionMessage = '';
+
+    this.budgetApi
+      .createMonthlyBudget({
+        householdId: this.householdId,
+        year: this.now.getFullYear(),
+        month: this.now.getMonth() + 1,
+        totalBudget: Number(value.totalBudget),
+        currency: value.currency.toUpperCase(),
+      })
+      .pipe(finalize(() => (this.actionStatus = 'idle')))
+      .subscribe({
+        next: () => {
+          this.actionMessage = 'Budget mensuel cree.';
+          this.refreshDashboard$.next();
+        },
+        error: () => {
+          this.actionMessage = 'Creation du budget impossible pour le moment.';
+        },
+      });
+  }
+
+  protected setBudgetAllocation(budget: MonthlyBudget | null): void {
+    if (!budget || this.allocationForm.invalid || this.actionStatus === 'saving') {
+      this.allocationForm.markAllAsTouched();
+      return;
+    }
+
+    const value = this.allocationForm.getRawValue();
+    this.actionStatus = 'saving';
+    this.actionMessage = '';
+
+    this.budgetApi
+      .setAllocation(budget.budgetId, value.categoryId, { plannedAmount: Number(value.plannedAmount) })
+      .pipe(finalize(() => (this.actionStatus = 'idle')))
+      .subscribe({
+        next: () => {
+          this.actionMessage = 'Allocation budgetaire mise a jour.';
+          this.refreshDashboard$.next();
+        },
+        error: () => {
+          this.actionMessage = "Mise a jour de l'allocation impossible pour le moment.";
+        },
+      });
+  }
+
+  private toReadyState(snapshot: FinanceSnapshot, budget: MonthlyBudget | null): DashboardState {
     return {
       status: 'ready',
       ...snapshot,
-      metrics: this.calculateMetrics(snapshot),
+      budget,
+      metrics: this.calculateMetrics(snapshot, budget),
     };
   }
 
@@ -238,6 +318,7 @@ export class App {
       accounts: [],
       categories: [],
       transactions: [],
+      budget: null,
       metrics: {
         totalBalance: 0,
         monthlyIncome: 0,
@@ -245,11 +326,12 @@ export class App {
         netFlow: 0,
         activeAccounts: 0,
         categoryCount: 0,
+        budgetConsumption: 0,
       },
     };
   }
 
-  private calculateMetrics(snapshot: FinanceSnapshot): DashboardMetrics {
+  private calculateMetrics(snapshot: FinanceSnapshot, budget: MonthlyBudget | null): DashboardMetrics {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
@@ -267,6 +349,7 @@ export class App {
       netFlow: monthlyIncome - monthlyExpenses,
       activeAccounts: snapshot.accounts.filter((account) => account.isActive).length,
       categoryCount: snapshot.categories.length,
+      budgetConsumption: budget?.consumptionRatio ?? 0,
     };
   }
 
@@ -279,5 +362,9 @@ export class App {
   private emptyToNull(value: string): string | null {
     const trimmed = value.trim();
     return trimmed.length === 0 ? null : trimmed;
+  }
+
+  private isNotFound(error: unknown): boolean {
+    return error instanceof HttpErrorResponse && error.status === 404;
   }
 }

@@ -217,6 +217,7 @@ h1 {
 }
 
 .account-list,
+.allocation-list,
 .transaction-list,
 .skeleton-list {
   display: grid;
@@ -224,6 +225,7 @@ h1 {
 }
 
 .account-row,
+.allocation-row,
 .transaction-row {
   align-items: center;
   background: rgba(244, 241, 232, 0.055);
@@ -236,6 +238,7 @@ h1 {
 }
 
 .account-row strong,
+.allocation-row strong,
 .transaction-row strong {
   color: #ffffff;
   display: block;
@@ -243,6 +246,7 @@ h1 {
 }
 
 .account-row span,
+.allocation-row span,
 .transaction-row span {
   color: #b8b09f;
   display: block;
@@ -251,6 +255,7 @@ h1 {
 }
 
 .account-row b,
+.allocation-row b,
 .transaction-row b {
   color: #f2cf72;
   font-size: 0.95rem;
@@ -275,6 +280,47 @@ h1 {
   padding: 0.45rem 0.65rem;
 }
 
+.budget-summary {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 1rem;
+}
+
+.budget-summary div {
+  background: rgba(244, 241, 232, 0.055);
+  border: 1px solid rgba(244, 241, 232, 0.08);
+  border-radius: 6px;
+  padding: 0.85rem;
+}
+
+.budget-summary span {
+  color: #b8b09f;
+  display: block;
+  font-size: 0.78rem;
+  margin-bottom: 0.4rem;
+}
+
+.budget-summary strong {
+  color: #ffffff;
+  font-size: 1.1rem;
+}
+
+.budget-progress {
+  background: rgba(244, 241, 232, 0.1);
+  border-radius: 999px;
+  height: 0.7rem;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.budget-progress span {
+  background: linear-gradient(90deg, #95c7a1, #f2cf72);
+  display: block;
+  height: 100%;
+  max-width: 100%;
+}
+
 .empty-state {
   align-items: center;
   color: #b8b09f;
@@ -283,6 +329,10 @@ h1 {
   min-height: 11rem;
   place-items: center;
   text-align: center;
+}
+
+.empty-state.compact {
+  min-height: 5rem;
 }
 
 .empty-state .material-icons {
