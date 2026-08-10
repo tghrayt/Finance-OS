@@ -2,7 +2,7 @@ FROM node:20.19-alpine AS build
 WORKDIR /src
 COPY package*.json ./
 COPY apps/web/package*.json apps/web/
-RUN npm ci
+RUN npm install --include=optional
 COPY apps/web apps/web
 RUN npm --workspace apps/web run build
 
