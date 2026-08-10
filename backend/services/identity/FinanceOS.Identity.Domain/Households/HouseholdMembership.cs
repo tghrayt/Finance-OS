@@ -4,6 +4,10 @@ namespace FinanceOS.Identity.Domain.Households;
 
 public sealed class HouseholdMembership
 {
+    private HouseholdMembership()
+    {
+    }
+
     internal HouseholdMembership(UserId userId, HouseholdRole role, DateTimeOffset joinedAt)
     {
         UserId = userId;

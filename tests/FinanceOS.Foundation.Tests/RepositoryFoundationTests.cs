@@ -8,6 +8,7 @@ public sealed class RepositoryFoundationTests
     [InlineData("backend/services/identity/FinanceOS.Identity.Api/FinanceOS.Identity.Api.csproj")]
     [InlineData("backend/services/identity/FinanceOS.Identity.Domain/FinanceOS.Identity.Domain.csproj")]
     [InlineData("backend/services/identity/FinanceOS.Identity.Application/FinanceOS.Identity.Application.csproj")]
+    [InlineData("backend/services/identity/FinanceOS.Identity.Infrastructure/FinanceOS.Identity.Infrastructure.csproj")]
     [InlineData("backend/services/finance/FinanceOS.Finance.Api/FinanceOS.Finance.Api.csproj")]
     [InlineData("backend/services/budget/FinanceOS.Budget.Api/FinanceOS.Budget.Api.csproj")]
     [InlineData("backend/services/forecast/FinanceOS.Forecast.Api/FinanceOS.Forecast.Api.csproj")]
@@ -27,6 +28,24 @@ public sealed class RepositoryFoundationTests
         var path = Path.Combine(repositoryRoot.FullName, relativePath.Replace('/', Path.DirectorySeparatorChar));
 
         Assert.True(File.Exists(path), $"Expected foundation file to exist: {relativePath}");
+    }
+
+    [Fact]
+    public void IdentityInitialMigrationExists()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var migrationsPath = Path.Combine(
+            repositoryRoot.FullName,
+            "backend",
+            "services",
+            "identity",
+            "FinanceOS.Identity.Infrastructure",
+            "Persistence",
+            "Migrations");
+
+        Assert.Contains(
+            Directory.EnumerateFiles(migrationsPath, "*InitialIdentitySchema.cs"),
+            path => !path.EndsWith(".Designer.cs", StringComparison.Ordinal));
     }
 
     private static DirectoryInfo FindRepositoryRoot()

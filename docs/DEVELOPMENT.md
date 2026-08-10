@@ -8,6 +8,22 @@ dotnet build FinanceOS.slnx
 dotnet test FinanceOS.slnx
 ```
 
+## Identity database
+
+Identity persistence uses EF Core with PostgreSQL and the `identity` schema.
+
+Generate a migration:
+
+```powershell
+dotnet ef migrations add MigrationName --project backend\services\identity\FinanceOS.Identity.Infrastructure\FinanceOS.Identity.Infrastructure.csproj --startup-project backend\services\identity\FinanceOS.Identity.Api\FinanceOS.Identity.Api.csproj --context IdentityDbContext --output-dir Persistence\Migrations
+```
+
+Apply migrations locally:
+
+```powershell
+dotnet ef database update --project backend\services\identity\FinanceOS.Identity.Infrastructure\FinanceOS.Identity.Infrastructure.csproj --startup-project backend\services\identity\FinanceOS.Identity.Api\FinanceOS.Identity.Api.csproj --context IdentityDbContext
+```
+
 ## Web app
 
 ```powershell

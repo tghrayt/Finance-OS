@@ -4,6 +4,16 @@ namespace FinanceOS.Identity.Domain.Users;
 
 public sealed class User
 {
+    private User()
+    {
+        Email = EmailAddress.Create("unknown@example.com");
+        FirstName = string.Empty;
+        LastName = string.Empty;
+        PreferredCurrency = "EUR";
+        Language = "en";
+        TimeZone = "UTC";
+    }
+
     private User(
         UserId id,
         string firstName,

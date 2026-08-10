@@ -65,7 +65,10 @@ services:
       context: .
       dockerfile: backend/services/identity/FinanceOS.Identity.Api/Dockerfile
     environment:
+      ConnectionStrings__IdentityDatabase: Host=postgres;Port=5432;Database=financeos;Username=financeos;Password=financeos
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+    depends_on:
+      - postgres
 
   finance-api:
     build:

@@ -7,6 +7,12 @@ public sealed class Household
 {
     private readonly List<HouseholdMembership> _memberships = [];
 
+    private Household()
+    {
+        Name = string.Empty;
+        Currency = "EUR";
+    }
+
     private Household(
         HouseholdId id,
         string name,
