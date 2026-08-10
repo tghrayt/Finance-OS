@@ -1,4 +1,8 @@
 using FinanceOS.BuildingBlocks.Observability;
+using FinanceOS.Identity.Api.Endpoints;
+using FinanceOS.Identity.Application.Features.Households.CreateHousehold;
+using FinanceOS.Identity.Application.Features.Households.GetCurrentHousehold;
+using FinanceOS.Identity.Application.Features.Users.CreateUser;
 using FinanceOS.Identity.Infrastructure;
 using FinanceOS.Identity.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +12,9 @@ var builder = WebApplication.CreateBuilder(args)
     .AddFinanceOSFoundation("FinanceOS.Identity.Api");
 
 builder.Services.AddIdentityInfrastructure(builder.Configuration);
+builder.Services.AddScoped<CreateUserHandler>();
+builder.Services.AddScoped<CreateHouseholdHandler>();
+builder.Services.AddScoped<GetCurrentHouseholdHandler>();
 builder.Services
     .AddHealthChecks()
     .AddCheck<IdentityDatabaseHealthCheck>(
@@ -32,6 +39,7 @@ app.MapGet("/", () => Results.Ok(new
 }));
 
 app.MapFinanceOSHealthChecks();
+app.MapIdentityEndpoints();
 
 app.Run();
 

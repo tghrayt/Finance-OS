@@ -34,6 +34,18 @@ Keep this disabled in production unless a deployment step explicitly controls it
 
 Identity readiness checks validate PostgreSQL connectivity through `/health/ready`. Liveness stays independent through `/health/live`.
 
+## Identity API
+
+Phase 1 exposes the first Identity endpoints:
+
+```text
+POST /api/v1/identity/users
+POST /api/v1/identity/households
+GET /api/v1/identity/households/current?userId={userId}
+```
+
+The `userId` query parameter is a temporary development bridge until JWT authentication provides the authenticated user id.
+
 ## Web app
 
 ```powershell

@@ -1,4 +1,6 @@
+using FinanceOS.Identity.Application.Abstractions;
 using FinanceOS.Identity.Infrastructure.Persistence;
+using FinanceOS.Identity.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +19,10 @@ public static class DependencyInjection
 
         services.AddDbContext<IdentityDbContext>(options =>
             options.UseNpgsql(connectionString));
+
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IHouseholdRepository, HouseholdRepository>();
+        services.AddScoped<IIdentityUnitOfWork, IdentityUnitOfWork>();
 
         return services;
     }

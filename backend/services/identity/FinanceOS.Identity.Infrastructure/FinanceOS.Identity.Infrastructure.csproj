@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FinanceOS.Identity.Domain\FinanceOS.Identity.Domain.csproj" />
+    <ProjectReference Include="..\FinanceOS.Identity.Application\FinanceOS.Identity.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>
