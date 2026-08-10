@@ -1,27 +1,182 @@
-<main class="shell">
-  <section class="hero" aria-labelledby="page-title">
-    <p class="eyebrow">FinanceOS Foundation</p>
-    <h1 id="page-title">Personal finance platform foundation</h1>
-    <p>
-      Phase 0 establishes the monorepo, backend solution, Angular workspace,
-      infrastructure and engineering standards. Business features start in later phases.
-    </p>
-  </section>
+<main class="finance-shell">
+  @if (dashboard$ | async; as dashboard) {
+    <section class="hero-section" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <p class="eyebrow">FinanceOS</p>
+        <h1 id="page-title">Pilotage financier personnel</h1>
+        <p>
+          Tableau de bord connecte a l'API Finance pour suivre les comptes,
+          les categories et les transactions depuis le backend deploye.
+        </p>
+      </div>
 
-  <section class="status-grid" aria-label="Foundation status">
-    <article>
-      <span>Backend</span>
-      <strong>.NET services scaffolded</strong>
-    </article>
-    <article>
-      <span>Frontend</span>
-      <strong>Angular workspace ready</strong>
-    </article>
-    <article>
-      <span>Infrastructure</span>
-      <strong>Docker Compose prepared</strong>
-    </article>
-  </section>
+      <aside class="hero-panel" aria-label="Resume de synchronisation">
+        <span class="material-icons" aria-hidden="true">sync</span>
+        <div>
+          <strong>
+            @if (dashboard.status === 'loading') {
+              Synchronisation
+            } @else if (dashboard.status === 'error') {
+              API indisponible
+            } @else {
+              API Finance active
+            }
+          </strong>
+          <span>{{ householdId }}</span>
+        </div>
+      </aside>
+    </section>
+
+    @if (dashboard.status === 'error') {
+      <section class="notice-section" role="alert">
+        <span class="material-icons" aria-hidden="true">error</span>
+        <p>{{ dashboard.errorMessage }}</p>
+      </section>
+    }
+
+    <section class="metrics-section" aria-label="Indicateurs financiers">
+      <article class="metric-card primary">
+        <span class="material-icons" aria-hidden="true">account_balance_wallet</span>
+        <p>Solde total</p>
+        <strong>{{ dashboard.metrics.totalBalance | currency: 'EUR' : 'symbol' : '1.0-0' }}</strong>
+      </article>
+      <article class="metric-card">
+        <span class="material-icons" aria-hidden="true">south_west</span>
+        <p>Revenus du mois</p>
+        <strong>{{ dashboard.metrics.monthlyIncome | currency: 'EUR' : 'symbol' : '1.0-0' }}</strong>
+      </article>
+      <article class="metric-card">
+        <span class="material-icons" aria-hidden="true">north_east</span>
+        <p>Depenses du mois</p>
+        <strong>{{ dashboard.metrics.monthlyExpenses | currency: 'EUR' : 'symbol' : '1.0-0' }}</strong>
+      </article>
+      <article class="metric-card">
+        <span class="material-icons" aria-hidden="true">trending_up</span>
+        <p>Flux net</p>
+        <strong>{{ dashboard.metrics.netFlow | currency: 'EUR' : 'symbol' : '1.0-0' }}</strong>
+      </article>
+    </section>
+
+    <section class="workspace-grid" aria-label="Espace financier">
+      <article class="panel accounts-panel">
+        <header>
+          <div>
+            <span class="material-icons" aria-hidden="true">account_balance</span>
+            <h2>Comptes</h2>
+          </div>
+          <strong>{{ dashboard.metrics.activeAccounts | number }} actifs</strong>
+        </header>
+
+        @if (dashboard.status === 'loading') {
+          <div class="skeleton-list" aria-label="Chargement des comptes">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        } @else if (dashboard.accounts.length === 0) {
+          <div class="empty-state">
+            <span class="material-icons" aria-hidden="true">add_card</span>
+            <p>Aucun compte pour ce foyer.</p>
+          </div>
+        } @else {
+          <div class="account-list">
+            @for (account of dashboard.accounts; track trackAccount($index, account)) {
+              <div class="account-row">
+                <div>
+                  <strong>{{ account.name }}</strong>
+                  <span>{{ account.type }} · {{ account.currency }}</span>
+                </div>
+                <b>{{ account.currentBalance | currency: account.currency : 'symbol' : '1.0-0' }}</b>
+              </div>
+            }
+          </div>
+        }
+      </article>
+
+      <article class="panel insight-panel">
+        <header>
+          <div>
+            <span class="material-icons" aria-hidden="true">donut_large</span>
+            <h2>Categories</h2>
+          </div>
+          <strong>{{ dashboard.metrics.categoryCount | number }}</strong>
+        </header>
+
+        @if (dashboard.status === 'loading') {
+          <div class="skeleton-chart" aria-label="Chargement des categories"></div>
+        } @else if (dashboard.categories.length === 0) {
+          <div class="empty-state">
+            <span class="material-icons" aria-hidden="true">category</span>
+            <p>Aucune categorie configuree.</p>
+          </div>
+        } @else {
+          <div class="category-cloud">
+            @for (category of dashboard.categories; track trackCategory($index, category)) {
+              <span>{{ category.icon }} {{ category.name }}</span>
+            }
+          </div>
+        }
+      </article>
+
+      <article class="panel transactions-panel">
+        <header>
+          <div>
+            <span class="material-icons" aria-hidden="true">receipt_long</span>
+            <h2>Transactions recentes</h2>
+          </div>
+          <strong>{{ dashboard.transactions.length | number }}</strong>
+        </header>
+
+        @if (dashboard.status === 'loading') {
+          <div class="skeleton-list" aria-label="Chargement des transactions">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        } @else if (dashboard.transactions.length === 0) {
+          <div class="empty-state">
+            <span class="material-icons" aria-hidden="true">playlist_add</span>
+            <p>Aucune transaction enregistree.</p>
+          </div>
+        } @else {
+          <div class="transaction-list">
+            @for (transaction of dashboard.transactions; track trackTransaction($index, transaction)) {
+              <div class="transaction-row">
+                <div>
+                  <strong>{{ categoryName(transaction, dashboard.categories) }}</strong>
+                  <span>{{ transaction.transactionDate | date: 'dd/MM/yyyy' }} · {{ transaction.type }}</span>
+                </div>
+                <b>{{ transaction.amount | currency: transaction.currency : 'symbol' : '1.0-0' }}</b>
+              </div>
+            }
+          </div>
+        }
+      </article>
+
+      <article class="panel command-panel">
+        <header>
+          <div>
+            <span class="material-icons" aria-hidden="true">bolt</span>
+            <h2>Actions rapides</h2>
+          </div>
+        </header>
+        <div class="action-grid">
+          <button type="button">
+            <span class="material-icons" aria-hidden="true">add</span>
+            Compte
+          </button>
+          <button type="button">
+            <span class="material-icons" aria-hidden="true">payments</span>
+            Transaction
+          </button>
+          <button type="button">
+            <span class="material-icons" aria-hidden="true">flag</span>
+            Objectif
+          </button>
+        </div>
+      </article>
+    </section>
+  }
 
   <router-outlet />
 </main>
