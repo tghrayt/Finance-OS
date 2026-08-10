@@ -24,6 +24,16 @@ Apply migrations locally:
 dotnet ef database update --project backend\services\identity\FinanceOS.Identity.Infrastructure\FinanceOS.Identity.Infrastructure.csproj --startup-project backend\services\identity\FinanceOS.Identity.Api\FinanceOS.Identity.Api.csproj --context IdentityDbContext
 ```
 
+In local development and Docker Compose, Identity migrations are applied on startup when:
+
+```text
+Identity:ApplyMigrationsOnStartup=true
+```
+
+Keep this disabled in production unless a deployment step explicitly controls it.
+
+Identity readiness checks validate PostgreSQL connectivity through `/health/ready`. Liveness stays independent through `/health/live`.
+
 ## Web app
 
 ```powershell
