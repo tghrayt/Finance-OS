@@ -107,6 +107,12 @@ The production Ingress uses the `letsencrypt-http` ClusterIssuer and stores the 
 
 The production overlay also keeps `infrastructure/k8s/overlays/production/ingress.example.yaml` as a reference for future custom domains.
 
+Public API traffic is routed through the gateway under `/api`. Finance endpoints are exposed as:
+
+```text
+https://financeos.51-210-40-78.sslip.io/api/v1/finance/...
+```
+
 ## Finance API Kubernetes secrets
 
 Before deploying `financeos-finance-api`, create the runtime secret in the VM cluster. Replace the values with the actual PostgreSQL and RabbitMQ endpoints used by the `financeos` namespace.

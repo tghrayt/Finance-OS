@@ -23,6 +23,9 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
+          env:
+            - name: ReverseProxy__Clusters__finance__Destinations__default__Address
+              value: http://financeos-finance-api/
           readinessProbe:
             httpGet:
               path: /health/ready
