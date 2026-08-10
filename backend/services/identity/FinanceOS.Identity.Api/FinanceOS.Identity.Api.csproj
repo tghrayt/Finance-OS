@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\building-blocks\FinanceOS.BuildingBlocks\FinanceOS.BuildingBlocks.csproj" />
+    <ProjectReference Include="..\FinanceOS.Identity.Application\FinanceOS.Identity.Application.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

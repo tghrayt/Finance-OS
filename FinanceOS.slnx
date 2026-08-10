@@ -18,6 +18,8 @@
   </Folder>
   <Folder Name="/backend/services/identity/">
     <Project Path="backend/services/identity/FinanceOS.Identity.Api/FinanceOS.Identity.Api.csproj" />
+    <Project Path="backend/services/identity/FinanceOS.Identity.Application/FinanceOS.Identity.Application.csproj" />
+    <Project Path="backend/services/identity/FinanceOS.Identity.Domain/FinanceOS.Identity.Domain.csproj" />
   </Folder>
   <Folder Name="/backend/services/notification/">
     <Project Path="backend/services/notification/FinanceOS.Notification.Api/FinanceOS.Notification.Api.csproj" />

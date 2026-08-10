@@ -8,7 +8,7 @@ var app = builder.Build();
 app.MapGet("/", () => Results.Ok(new
 {
     service = "FinanceOS Identity Service",
-    phase = "Foundation",
+    phase = "Identity",
     status = "Running"
 }));
 

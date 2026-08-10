@@ -28,7 +28,7 @@ Backend services are ASP.NET Core applications. Phase 0 creates only service she
 
 ## Service boundaries
 
-Initial service boundaries are prepared but not implemented:
+Initial service boundaries are prepared:
 
 - Identity
 - Finance
@@ -37,6 +37,19 @@ Initial service boundaries are prepared but not implemented:
 - Notification
 
 Each service will own its persistence in later phases. No service may directly query another service database.
+
+## Identity service
+
+Identity has started Phase 1 with explicit Domain and Application projects:
+
+```text
+backend/services/identity/
+  FinanceOS.Identity.Api/
+  FinanceOS.Identity.Application/
+  FinanceOS.Identity.Domain/
+```
+
+The Domain layer currently owns user, household, membership and role invariants. Authentication provider integration remains intentionally outside the Domain layer and will be added through Application and Infrastructure increments.
 
 ## Gateway
 

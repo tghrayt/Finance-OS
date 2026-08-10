@@ -6,6 +6,8 @@ public sealed class RepositoryFoundationTests
     [InlineData("FinanceOS.slnx")]
     [InlineData("backend/gateway/FinanceOS.Gateway/FinanceOS.Gateway.csproj")]
     [InlineData("backend/services/identity/FinanceOS.Identity.Api/FinanceOS.Identity.Api.csproj")]
+    [InlineData("backend/services/identity/FinanceOS.Identity.Domain/FinanceOS.Identity.Domain.csproj")]
+    [InlineData("backend/services/identity/FinanceOS.Identity.Application/FinanceOS.Identity.Application.csproj")]
     [InlineData("backend/services/finance/FinanceOS.Finance.Api/FinanceOS.Finance.Api.csproj")]
     [InlineData("backend/services/budget/FinanceOS.Budget.Api/FinanceOS.Budget.Api.csproj")]
     [InlineData("backend/services/forecast/FinanceOS.Forecast.Api/FinanceOS.Forecast.Api.csproj")]

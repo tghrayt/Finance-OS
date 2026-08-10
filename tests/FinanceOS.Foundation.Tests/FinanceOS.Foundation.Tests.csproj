@@ -18,4 +18,8 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\backend\services\identity\FinanceOS.Identity.Domain\FinanceOS.Identity.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
