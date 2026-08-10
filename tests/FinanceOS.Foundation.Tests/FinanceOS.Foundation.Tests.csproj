@@ -21,6 +21,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\backend\services\identity\FinanceOS.Identity.Application\FinanceOS.Identity.Application.csproj" />
     <ProjectReference Include="..\..\backend\services\identity\FinanceOS.Identity.Domain\FinanceOS.Identity.Domain.csproj" />
+    <ProjectReference Include="..\..\backend\services\budget\FinanceOS.Budget.Application\FinanceOS.Budget.Application.csproj" />
+    <ProjectReference Include="..\..\backend\services\budget\FinanceOS.Budget.Domain\FinanceOS.Budget.Domain.csproj" />
     <ProjectReference Include="..\..\backend\services\finance\FinanceOS.Finance.Application\FinanceOS.Finance.Application.csproj" />
     <ProjectReference Include="..\..\backend\services\finance\FinanceOS.Finance.Domain\FinanceOS.Finance.Domain.csproj" />
   </ItemGroup>

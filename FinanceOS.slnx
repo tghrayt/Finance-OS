@@ -12,6 +12,9 @@
   <Folder Name="/backend/services/" />
   <Folder Name="/backend/services/budget/">
     <Project Path="backend/services/budget/FinanceOS.Budget.Api/FinanceOS.Budget.Api.csproj" />
+    <Project Path="backend/services/budget/FinanceOS.Budget.Application/FinanceOS.Budget.Application.csproj" />
+    <Project Path="backend/services/budget/FinanceOS.Budget.Domain/FinanceOS.Budget.Domain.csproj" />
+    <Project Path="backend/services/budget/FinanceOS.Budget.Infrastructure/FinanceOS.Budget.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/backend/services/finance/">
     <Project Path="backend/services/finance/FinanceOS.Finance.Api/FinanceOS.Finance.Api.csproj" />

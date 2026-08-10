@@ -4,4 +4,5 @@ resources:
   - namespace.yaml
   - gateway.yaml
   - finance-api.yaml
+  - budget-api.yaml
   - web.yaml

@@ -34,7 +34,7 @@ The deployment foundation is:
 - GitHub Actions sends only the Kubernetes manifests to a temporary folder on the VM.
 - k3s applies the Kubernetes manifests from that temporary folder.
 - k3s updates the running deployments to the exact commit image tag.
-- `financeos-finance-api` is deployed when its Kubernetes secrets and backing PostgreSQL/RabbitMQ services are available.
+- `financeos-finance-api` and `financeos-budget-api` are deployed when their Kubernetes secrets and backing PostgreSQL/RabbitMQ services are available.
 
 ## Required GitHub secrets
 
@@ -81,9 +81,11 @@ tar -xzf /tmp/financeos-k8s.tar.gz -C /tmp/financeos-deploy
 sudo -n kubectl apply -k /tmp/financeos-deploy/infrastructure/k8s/overlays/production
 sudo -n kubectl -n financeos set image deployment/financeos-gateway gateway=ghcr.io/tghrayt/finance-os/gateway:$IMAGE_TAG
 sudo -n kubectl -n financeos set image deployment/financeos-finance-api finance-api=ghcr.io/tghrayt/finance-os/finance-api:$IMAGE_TAG
+sudo -n kubectl -n financeos set image deployment/financeos-budget-api budget-api=ghcr.io/tghrayt/finance-os/budget-api:$IMAGE_TAG
 sudo -n kubectl -n financeos set image deployment/financeos-web web=ghcr.io/tghrayt/finance-os/web:$IMAGE_TAG
 sudo -n kubectl -n financeos rollout status deployment/financeos-gateway
 sudo -n kubectl -n financeos rollout status deployment/financeos-finance-api
+sudo -n kubectl -n financeos rollout status deployment/financeos-budget-api
 sudo -n kubectl -n financeos rollout status deployment/financeos-web
 rm -rf /tmp/financeos-deploy /tmp/financeos-k8s.tar.gz
 ```
@@ -113,6 +115,12 @@ Public API traffic is routed through the gateway under `/api`. Finance endpoints
 https://financeos.51-210-40-78.sslip.io/api/v1/finance/...
 ```
 
+Budget endpoints are exposed as:
+
+```text
+https://financeos.51-210-40-78.sslip.io/api/v1/budget/...
+```
+
 ## Finance API Kubernetes secrets
 
 Before deploying `financeos-finance-api`, create the runtime secret in the VM cluster. Replace the values with the actual PostgreSQL and RabbitMQ endpoints used by the `financeos` namespace.
@@ -129,5 +137,7 @@ sudo kubectl -n financeos create secret generic financeos-finance-api-secrets \
 ```
 
 `Finance__ApplyMigrationsOnStartup=true` is configured in the deployment so the initial `finance` schema migration can be applied automatically when the service starts.
+
+`financeos-budget-api` currently reuses the same PostgreSQL connection secret and applies a separate EF Core `budget` schema with `Budget__ApplyMigrationsOnStartup=true`. A dedicated budget database secret can be introduced later without changing public routing.
 
 This will be refined later with dedicated database/RabbitMQ manifests or managed services, rollback and deeper health verification.
