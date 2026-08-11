@@ -1,44 +1,23 @@
 import { AsyncPipe, CurrencyPipe, DatePipe, DecimalPipe, PercentPipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
-import { catchError, filter, finalize, forkJoin, map, Observable, of, shareReplay, startWith, Subject, switchMap, throwError } from 'rxjs';
+import { filter, finalize, Observable, shareReplay, startWith, Subject, switchMap } from 'rxjs';
 
 import { BudgetApiService, MonthlyBudget } from './budget/budget-api.service';
 import { AuthSessionService } from './core/auth/auth-session.service';
+import { DashboardDataService } from './features/dashboard/dashboard-data.service';
+import { DashboardState } from './features/dashboard/dashboard.models';
 import {
   FinanceAccount,
   FinanceApiService,
   FinanceCategory,
-  FinanceSnapshot,
   FinanceTransaction,
 } from './finance/finance-api.service';
 import { InAppNotification, NotificationApiService } from './notification/notification-api.service';
 
 type AppSection = 'dashboard' | 'accounts' | 'transactions' | 'budgets' | 'notifications';
 type CreationModal = 'account' | 'category' | 'budget' | 'allocation' | 'transaction';
-
-interface DashboardMetrics {
-  totalBalance: number;
-  monthlyIncome: number;
-  monthlyExpenses: number;
-  netFlow: number;
-  activeAccounts: number;
-  categoryCount: number;
-  budgetConsumption: number;
-}
-
-interface DashboardState {
-  status: 'loading' | 'ready' | 'error';
-  accounts: FinanceAccount[];
-  categories: FinanceCategory[];
-  transactions: FinanceTransaction[];
-  budget: MonthlyBudget | null;
-  notifications: InAppNotification[];
-  metrics: DashboardMetrics;
-  errorMessage?: string;
-}
 
 @Component({
   selector: 'app-root',
@@ -66,11 +45,11 @@ export class App {
   private readonly financeApi = inject(FinanceApiService);
   private readonly budgetApi = inject(BudgetApiService);
   private readonly notificationApi = inject(NotificationApiService);
+  private readonly dashboardData = inject(DashboardDataService);
   private readonly authSession = inject(AuthSessionService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly refreshDashboard$ = new Subject<void>();
-  private readonly now = new Date();
 
   protected readonly accountForm = this.formBuilder.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(120)]],
@@ -118,27 +97,7 @@ export class App {
 
     this.dashboard$ = this.refreshDashboard$.pipe(
       startWith(undefined),
-      switchMap(() =>
-        forkJoin({
-          finance: this.financeApi.getSnapshot(this.householdId),
-          budget: this.budgetApi
-            .getCurrentBudget(this.householdId, this.now.getFullYear(), this.now.getMonth() + 1)
-            .pipe(catchError((error: unknown) => (this.isNotFound(error) ? of(null) : throwError(() => error)))),
-          notifications: this.notificationApi
-            .getInAppNotifications(this.householdId)
-            .pipe(catchError(() => of([]))),
-        }).pipe(
-          map(({ finance, budget, notifications }) => this.toReadyState(finance, budget, notifications)),
-          startWith(this.toLoadingState()),
-          catchError(() =>
-            of({
-              ...this.toLoadingState(),
-              status: 'error' as const,
-              errorMessage: 'Impossible de charger les donnees finance pour le moment.',
-            }),
-          ),
-        ),
-      ),
+      switchMap(() => this.dashboardData.load(this.householdId)),
       shareReplay({ bufferSize: 1, refCount: true }),
     );
   }
@@ -333,12 +292,13 @@ export class App {
     const value = this.budgetForm.getRawValue();
     this.actionStatus = 'saving';
     this.actionMessage = '';
+    const now = new Date();
 
     this.budgetApi
       .createMonthlyBudget({
         householdId: this.householdId,
-        year: this.now.getFullYear(),
-        month: this.now.getMonth() + 1,
+        year: now.getFullYear(),
+        month: now.getMonth() + 1,
         totalBudget: Number(value.totalBudget),
         currency: value.currency.toUpperCase(),
       })
@@ -402,71 +362,9 @@ export class App {
       });
   }
 
-  private toReadyState(snapshot: FinanceSnapshot, budget: MonthlyBudget | null, notifications: InAppNotification[]): DashboardState {
-    return {
-      status: 'ready',
-      ...snapshot,
-      budget,
-      notifications,
-      metrics: this.calculateMetrics(snapshot, budget),
-    };
-  }
-
-  private toLoadingState(): DashboardState {
-    return {
-      status: 'loading',
-      accounts: [],
-      categories: [],
-      transactions: [],
-      budget: null,
-      notifications: [],
-      metrics: {
-        totalBalance: 0,
-        monthlyIncome: 0,
-        monthlyExpenses: 0,
-        netFlow: 0,
-        activeAccounts: 0,
-        categoryCount: 0,
-        budgetConsumption: 0,
-      },
-    };
-  }
-
-  private calculateMetrics(snapshot: FinanceSnapshot, budget: MonthlyBudget | null): DashboardMetrics {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    const monthlyTransactions = snapshot.transactions.filter((transaction) => {
-      const transactionDate = new Date(`${transaction.transactionDate}T00:00:00`);
-      return transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear;
-    });
-    const monthlyIncome = this.sumByType(monthlyTransactions, 'Income');
-    const monthlyExpenses = this.sumByType(monthlyTransactions, 'Expense');
-
-    return {
-      totalBalance: snapshot.accounts.reduce((total, account) => total + account.currentBalance, 0),
-      monthlyIncome,
-      monthlyExpenses,
-      netFlow: monthlyIncome - monthlyExpenses,
-      activeAccounts: snapshot.accounts.filter((account) => account.isActive).length,
-      categoryCount: snapshot.categories.length,
-      budgetConsumption: budget?.consumptionRatio ?? 0,
-    };
-  }
-
-  private sumByType(transactions: FinanceTransaction[], type: string): number {
-    return transactions
-      .filter((transaction) => transaction.type.toLowerCase() === type.toLowerCase())
-      .reduce((total, transaction) => total + transaction.amount, 0);
-  }
-
   private emptyToNull(value: string): string | null {
     const trimmed = value.trim();
     return trimmed.length === 0 ? null : trimmed;
-  }
-
-  private isNotFound(error: unknown): boolean {
-    return error instanceof HttpErrorResponse && error.status === 404;
   }
 
   private syncActiveSection(url: string): void {
