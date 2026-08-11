@@ -6,6 +6,8 @@ import { filter, finalize, Observable, shareReplay, startWith, Subject, switchMa
 
 import { BudgetApiService, MonthlyBudget } from './budget/budget-api.service';
 import { AuthSessionService } from './core/auth/auth-session.service';
+import { NAVIGATION_ITEMS } from './core/shell/navigation-items';
+import { AppSection, CreationModal } from './core/shell/shell.models';
 import { DashboardDataService } from './features/dashboard/dashboard-data.service';
 import { DashboardState } from './features/dashboard/dashboard.models';
 import {
@@ -16,9 +18,6 @@ import {
 } from './finance/finance-api.service';
 import { InAppNotification, NotificationApiService } from './notification/notification-api.service';
 
-type AppSection = 'dashboard' | 'accounts' | 'transactions' | 'budgets' | 'notifications';
-type CreationModal = 'account' | 'category' | 'budget' | 'allocation' | 'transaction';
-
 @Component({
   selector: 'app-root',
   imports: [AsyncPipe, CurrencyPipe, DatePipe, DecimalPipe, PercentPipe, ReactiveFormsModule, RouterOutlet],
@@ -28,13 +27,7 @@ type CreationModal = 'account' | 'category' | 'budget' | 'allocation' | 'transac
 export class App {
   protected readonly dashboard$: Observable<DashboardState>;
   protected readonly session = inject(AuthSessionService).session;
-  protected readonly navItems: ReadonlyArray<{ section: AppSection; label: string; icon: string }> = [
-    { section: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { section: 'accounts', label: 'Comptes', icon: 'account_balance' },
-    { section: 'transactions', label: 'Transactions', icon: 'receipt_long' },
-    { section: 'budgets', label: 'Budgets', icon: 'savings' },
-    { section: 'notifications', label: 'Alertes', icon: 'notifications_active' },
-  ];
+  protected readonly navItems = NAVIGATION_ITEMS;
   protected readonly accountTypes = ['Checking', 'Savings', 'Cash', 'CreditCard', 'Investment', 'Other'];
   protected readonly transactionTypes = ['Expense', 'Income'];
   protected activeSection: AppSection = 'dashboard';
