@@ -95,7 +95,17 @@ services:
       context: .
       dockerfile: backend/services/budget/FinanceOS.Budget.Api/Dockerfile
     environment:
+      ConnectionStrings__BudgetDatabase: Host=postgres;Port=5432;Database=financeos;Username=financeos;Password=financeos
+      Budget__ApplyMigrationsOnStartup: "true"
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   forecast-api:
     build:
@@ -109,4 +119,14 @@ services:
       context: .
       dockerfile: backend/services/notification/FinanceOS.Notification.Api/Dockerfile
     environment:
+      ConnectionStrings__NotificationDatabase: Host=postgres;Port=5432;Database=financeos;Username=financeos;Password=financeos
+      Notification__ApplyMigrationsOnStartup: "true"
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy

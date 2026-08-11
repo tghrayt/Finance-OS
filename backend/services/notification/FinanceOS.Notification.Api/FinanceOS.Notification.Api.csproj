@@ -2,6 +2,15 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\building-blocks\FinanceOS.BuildingBlocks\FinanceOS.BuildingBlocks.csproj" />
+    <ProjectReference Include="..\FinanceOS.Notification.Application\FinanceOS.Notification.Application.csproj" />
+    <ProjectReference Include="..\FinanceOS.Notification.Infrastructure\FinanceOS.Notification.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
   <PropertyGroup>

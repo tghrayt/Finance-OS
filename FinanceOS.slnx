@@ -33,6 +33,9 @@
   </Folder>
   <Folder Name="/backend/services/notification/">
     <Project Path="backend/services/notification/FinanceOS.Notification.Api/FinanceOS.Notification.Api.csproj" />
+    <Project Path="backend/services/notification/FinanceOS.Notification.Application/FinanceOS.Notification.Application.csproj" />
+    <Project Path="backend/services/notification/FinanceOS.Notification.Domain/FinanceOS.Notification.Domain.csproj" />
+    <Project Path="backend/services/notification/FinanceOS.Notification.Infrastructure/FinanceOS.Notification.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/FinanceOS.Foundation.Tests/FinanceOS.Foundation.Tests.csproj" />

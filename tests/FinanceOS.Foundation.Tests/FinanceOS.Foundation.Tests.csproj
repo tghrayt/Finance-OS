@@ -25,6 +25,8 @@
     <ProjectReference Include="..\..\backend\services\budget\FinanceOS.Budget.Domain\FinanceOS.Budget.Domain.csproj" />
     <ProjectReference Include="..\..\backend\services\finance\FinanceOS.Finance.Application\FinanceOS.Finance.Application.csproj" />
     <ProjectReference Include="..\..\backend\services\finance\FinanceOS.Finance.Domain\FinanceOS.Finance.Domain.csproj" />
+    <ProjectReference Include="..\..\backend\services\notification\FinanceOS.Notification.Application\FinanceOS.Notification.Application.csproj" />
+    <ProjectReference Include="..\..\backend\services\notification\FinanceOS.Notification.Domain\FinanceOS.Notification.Domain.csproj" />
   </ItemGroup>
 
 </Project>

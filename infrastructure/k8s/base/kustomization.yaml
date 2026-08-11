@@ -5,4 +5,5 @@ resources:
   - gateway.yaml
   - finance-api.yaml
   - budget-api.yaml
+  - notification-api.yaml
   - web.yaml

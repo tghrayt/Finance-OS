@@ -65,3 +65,12 @@ Budget exceeded fields:
 - `PlannedAmount`
 - `ActualAmount`
 - `Currency`
+
+## Notification
+
+Notification Service consumes Budget events idempotently through its inbox:
+
+- `BudgetThresholdReachedV1`
+- `BudgetExceededV1`
+
+Each consumed event creates one in-app notification for the related household. Notifications are queryable through `/api/v1/notification/in-app` and can be marked as read through `/api/v1/notification/in-app/{notificationId}/read`.

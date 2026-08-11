@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: financeos-notification-api
+  namespace: financeos
+  labels:
+    app.kubernetes.io/name: financeos-notification-api
+    app.kubernetes.io/part-of: financeos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: financeos-notification-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: financeos-notification-api
+        app.kubernetes.io/part-of: financeos
+    spec:
+      containers:
+        - name: notification-api
+          image: ghcr.io/tghrayt/finance-os/notification-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ConnectionStrings__NotificationDatabase
+              valueFrom:
+                secretKeyRef:
+                  name: financeos-finance-api-secrets
+                  key: finance-database
+            - name: RabbitMQ__Host
+              valueFrom:
+                secretKeyRef:
+                  name: financeos-finance-api-secrets
+                  key: rabbitmq-host
+            - name: RabbitMQ__Username
+              valueFrom:
+                secretKeyRef:
+                  name: financeos-finance-api-secrets
+                  key: rabbitmq-username
+            - name: RabbitMQ__Password
+              valueFrom:
+                secretKeyRef:
+                  name: financeos-finance-api-secrets
+                  key: rabbitmq-password
+            - name: Notification__ApplyMigrationsOnStartup
+              value: "true"
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: financeos-notification-api
+  namespace: financeos
+  labels:
+    app.kubernetes.io/name: financeos-notification-api
+    app.kubernetes.io/part-of: financeos
+spec:
+  selector:
+    app.kubernetes.io/name: financeos-notification-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

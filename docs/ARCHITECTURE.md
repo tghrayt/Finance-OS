@@ -51,10 +51,18 @@ backend/services/identity/
 
 The Domain layer currently owns user, household, membership and role invariants. Authentication provider integration remains intentionally outside the Domain layer and will be added through Application and Infrastructure increments.
 
+## Budget service
+
+Budget owns monthly budgets and category allocations. It consumes Finance transaction events through an inbox, updates allocation consumption and publishes budget threshold events through an outbox.
+
+## Notification service
+
+Notification owns in-app notifications. It consumes Budget threshold and exceeded events through an inbox, persists notifications in its own `notification` schema and exposes read APIs through the gateway.
+
 ## Gateway
 
 The API gateway uses YARP and loads route configuration from `appsettings.json`.
 
 ## Frontend foundation
 
-The web app is Angular 21 with standalone components and Angular Material installed. It currently contains a foundation landing shell only.
+The web app is Angular 21 with standalone components and Angular Material installed. It currently contains the first responsive dashboard shell and consumes Finance/Budget APIs where available.

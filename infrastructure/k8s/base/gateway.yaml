@@ -28,6 +28,8 @@ spec:
               value: http://financeos-finance-api/
             - name: ReverseProxy__Clusters__budget__Destinations__default__Address
               value: http://financeos-budget-api/
+            - name: ReverseProxy__Clusters__notification__Destinations__default__Address
+              value: http://financeos-notification-api/
           readinessProbe:
             httpGet:
               path: /health/ready

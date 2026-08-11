@@ -20,6 +20,7 @@ jobs:
       GATEWAY_IMAGE: ghcr.io/${{ github.repository_owner }}/finance-os/gateway
       FINANCE_API_IMAGE: ghcr.io/${{ github.repository_owner }}/finance-os/finance-api
       BUDGET_API_IMAGE: ghcr.io/${{ github.repository_owner }}/finance-os/budget-api
+      NOTIFICATION_API_IMAGE: ghcr.io/${{ github.repository_owner }}/finance-os/notification-api
       WEB_IMAGE: ghcr.io/${{ github.repository_owner }}/finance-os/web
     steps:
       - uses: actions/checkout@v4
@@ -63,6 +64,16 @@ jobs:
           tags: |
             ${{ env.BUDGET_API_IMAGE }}:${{ env.IMAGE_TAG }}
             ${{ env.BUDGET_API_IMAGE }}:latest
+
+      - name: Build and push notification api image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/services/notification/FinanceOS.Notification.Api/Dockerfile
+          push: true
+          tags: |
+            ${{ env.NOTIFICATION_API_IMAGE }}:${{ env.IMAGE_TAG }}
+            ${{ env.NOTIFICATION_API_IMAGE }}:latest
 
       - name: Build and push web image
         uses: docker/build-push-action@v6
@@ -112,10 +123,12 @@ jobs:
             sudo -n kubectl -n financeos set image deployment/financeos-gateway gateway=${{ env.GATEWAY_IMAGE }}:${{ env.IMAGE_TAG }}
             sudo -n kubectl -n financeos set image deployment/financeos-finance-api finance-api=${{ env.FINANCE_API_IMAGE }}:${{ env.IMAGE_TAG }}
             sudo -n kubectl -n financeos set image deployment/financeos-budget-api budget-api=${{ env.BUDGET_API_IMAGE }}:${{ env.IMAGE_TAG }}
+            sudo -n kubectl -n financeos set image deployment/financeos-notification-api notification-api=${{ env.NOTIFICATION_API_IMAGE }}:${{ env.IMAGE_TAG }}
             sudo -n kubectl -n financeos set image deployment/financeos-web web=${{ env.WEB_IMAGE }}:${{ env.IMAGE_TAG }}
             sudo -n kubectl -n financeos rollout status deployment/financeos-gateway
             sudo -n kubectl -n financeos rollout status deployment/financeos-finance-api
             sudo -n kubectl -n financeos rollout status deployment/financeos-budget-api
+            sudo -n kubectl -n financeos rollout status deployment/financeos-notification-api
             sudo -n kubectl -n financeos rollout status deployment/financeos-web
             rm -rf /tmp/financeos-deploy /tmp/financeos-k8s.tar.gz
           EOF
