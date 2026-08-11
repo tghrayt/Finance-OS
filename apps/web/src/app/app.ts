@@ -17,6 +17,9 @@ import { InAppNotification, NotificationApiService } from './notification/notifi
 
 const DEMO_HOUSEHOLD_ID = '00000000-0000-0000-0000-000000000000';
 
+type AppSection = 'dashboard' | 'accounts' | 'transactions' | 'budgets' | 'notifications';
+type CreationModal = 'account' | 'category' | 'budget' | 'allocation' | 'transaction';
+
 interface DashboardMetrics {
   totalBalance: number;
   monthlyIncome: number;
@@ -47,8 +50,18 @@ interface DashboardState {
 export class App {
   protected readonly dashboard$: Observable<DashboardState>;
   protected readonly householdId = DEMO_HOUSEHOLD_ID;
+  protected readonly navItems: ReadonlyArray<{ section: AppSection; label: string; icon: string }> = [
+    { section: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+    { section: 'accounts', label: 'Comptes', icon: 'account_balance' },
+    { section: 'transactions', label: 'Transactions', icon: 'receipt_long' },
+    { section: 'budgets', label: 'Budgets', icon: 'savings' },
+    { section: 'notifications', label: 'Alertes', icon: 'notifications_active' },
+  ];
   protected readonly accountTypes = ['Checking', 'Savings', 'Cash', 'CreditCard', 'Investment', 'Other'];
   protected readonly transactionTypes = ['Expense', 'Income'];
+  protected activeSection: AppSection = 'dashboard';
+  protected activeModal: CreationModal | null = null;
+  protected demoAccessGranted = false;
   protected actionStatus: 'idle' | 'saving' = 'idle';
   protected actionMessage = '';
   private readonly financeApi = inject(FinanceApiService);
@@ -90,6 +103,10 @@ export class App {
   protected readonly allocationForm = this.formBuilder.nonNullable.group({
     categoryId: ['', Validators.required],
     plannedAmount: [100, [Validators.required, Validators.min(0.01)]],
+  });
+
+  protected readonly accessForm = this.formBuilder.nonNullable.group({
+    email: ['demo@financeos.local', [Validators.required, Validators.email]],
   });
 
   constructor() {
@@ -136,6 +153,38 @@ export class App {
     return notification.notificationId;
   }
 
+  protected enterDemoAccess(): void {
+    if (this.accessForm.invalid) {
+      this.accessForm.markAllAsTouched();
+      return;
+    }
+
+    this.demoAccessGranted = true;
+  }
+
+  protected signOut(): void {
+    this.demoAccessGranted = false;
+    this.activeModal = null;
+    this.activeSection = 'dashboard';
+  }
+
+  protected setActiveSection(section: AppSection): void {
+    this.activeSection = section;
+  }
+
+  protected openModal(modal: CreationModal): void {
+    this.actionMessage = '';
+    this.activeModal = modal;
+  }
+
+  protected closeModal(): void {
+    if (this.actionStatus === 'saving') {
+      return;
+    }
+
+    this.activeModal = null;
+  }
+
   protected categoryName(transaction: FinanceTransaction, categories: FinanceCategory[]): string {
     return categories.find((category) => category.categoryId === transaction.categoryId)?.name ?? 'Non categorise';
   }
@@ -178,6 +227,7 @@ export class App {
             currency: account.currency,
             institutionName: '',
           });
+          this.closeModal();
           this.refreshDashboard$.next();
         },
         error: () => {
@@ -220,6 +270,7 @@ export class App {
             description: '',
             transactionDate: new Date().toISOString().slice(0, 10),
           });
+          this.closeModal();
           this.refreshDashboard$.next();
         },
         error: () => {
@@ -251,6 +302,7 @@ export class App {
           this.actionMessage = `Categorie "${category.name}" creee.`;
           this.transactionForm.patchValue({ categoryId: category.categoryId });
           this.categoryForm.reset({ name: '', icon: 'label' });
+          this.closeModal();
           this.refreshDashboard$.next();
         },
         error: () => {
@@ -281,6 +333,7 @@ export class App {
       .subscribe({
         next: () => {
           this.actionMessage = 'Budget mensuel cree.';
+          this.closeModal();
           this.refreshDashboard$.next();
         },
         error: () => {
@@ -305,6 +358,7 @@ export class App {
       .subscribe({
         next: () => {
           this.actionMessage = 'Allocation budgetaire mise a jour.';
+          this.closeModal();
           this.refreshDashboard$.next();
         },
         error: () => {

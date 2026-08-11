@@ -1,413 +1,513 @@
 <main class="finance-shell">
-  @if (dashboard$ | async; as dashboard) {
-    <section class="hero-section" aria-labelledby="page-title">
-      <div class="hero-copy">
+  @if (!demoAccessGranted) {
+    <section class="access-screen" aria-labelledby="access-title">
+      <div class="access-panel">
         <p class="eyebrow">FinanceOS</p>
-        <h1 id="page-title">Pilotage financier personnel</h1>
+        <h1 id="access-title">Acces a votre espace financier</h1>
         <p>
-          Tableau de bord connecte a l'API Finance pour suivre les comptes,
-          les categories et les transactions depuis le backend deploye.
+          L'authentification securisee OIDC/JWT arrive avec la prochaine brique Identity.
+          Pour l'instant, cet ecran ouvre un mode demo explicite sur le foyer de test.
         </p>
+
+        <form [formGroup]="accessForm" (ngSubmit)="enterDemoAccess()">
+          <label>
+            Email
+            <input type="email" formControlName="email" autocomplete="email" />
+          </label>
+          <button type="submit">
+            <span class="material-icons" aria-hidden="true">login</span>
+            Entrer en mode demo
+          </button>
+        </form>
       </div>
-
-      <aside class="hero-panel" aria-label="Resume de synchronisation">
-        <span class="material-icons" aria-hidden="true">sync</span>
-        <div>
-          <strong>
-            @if (dashboard.status === 'loading') {
-              Synchronisation
-            } @else if (dashboard.status === 'error') {
-              API indisponible
-            } @else {
-              API Finance active
-            }
-          </strong>
-          <span>{{ householdId }}</span>
+    </section>
+  } @else if (dashboard$ | async; as dashboard) {
+    <div class="app-frame">
+      <nav class="side-nav" aria-label="Navigation principale">
+        <div class="brand-mark">
+          <span class="material-icons" aria-hidden="true">account_balance_wallet</span>
+          <strong>FinanceOS</strong>
         </div>
-      </aside>
-    </section>
 
-    @if (dashboard.status === 'error') {
-      <section class="notice-section" role="alert">
-        <span class="material-icons" aria-hidden="true">error</span>
-        <p>{{ dashboard.errorMessage }}</p>
-      </section>
-    }
+        <div class="nav-links">
+          @for (item of navItems; track item.section) {
+            <button type="button" [class.active]="activeSection === item.section" (click)="setActiveSection(item.section)">
+              <span class="material-icons" aria-hidden="true">{{ item.icon }}</span>
+              <span>{{ item.label }}</span>
+            </button>
+          }
+        </div>
 
-    <section class="metrics-section" aria-label="Indicateurs financiers">
-      <article class="metric-card primary">
-        <span class="material-icons" aria-hidden="true">account_balance_wallet</span>
-        <p>Solde total</p>
-        <strong>{{ dashboard.metrics.totalBalance | currency: 'EUR' : 'symbol' : '1.0-0' }}</strong>
-      </article>
-      <article class="metric-card">
-        <span class="material-icons" aria-hidden="true">south_west</span>
-        <p>Revenus du mois</p>
-        <strong>{{ dashboard.metrics.monthlyIncome | currency: 'EUR' : 'symbol' : '1.0-0' }}</strong>
-      </article>
-      <article class="metric-card">
-        <span class="material-icons" aria-hidden="true">north_east</span>
-        <p>Depenses du mois</p>
-        <strong>{{ dashboard.metrics.monthlyExpenses | currency: 'EUR' : 'symbol' : '1.0-0' }}</strong>
-      </article>
-      <article class="metric-card">
-        <span class="material-icons" aria-hidden="true">trending_up</span>
-        <p>Flux net</p>
-        <strong>{{ dashboard.metrics.netFlow | currency: 'EUR' : 'symbol' : '1.0-0' }}</strong>
-      </article>
-      <article class="metric-card">
-        <span class="material-icons" aria-hidden="true">pie_chart</span>
-        <p>Budget consomme</p>
-        <strong>{{ dashboard.metrics.budgetConsumption | percent: '1.0-0' }}</strong>
-      </article>
-    </section>
+        <button type="button" class="sign-out-button" (click)="signOut()">
+          <span class="material-icons" aria-hidden="true">logout</span>
+          <span>Sortir</span>
+        </button>
+      </nav>
 
-    <section class="workspace-grid" aria-label="Espace financier">
-      <article class="panel accounts-panel">
-        <header>
+      <div class="app-content">
+        <header class="top-bar">
           <div>
-            <span class="material-icons" aria-hidden="true">account_balance</span>
-            <h2>Comptes</h2>
+            <p class="eyebrow">FinanceOS</p>
+            <h1 id="page-title">Pilotage financier personnel</h1>
           </div>
-          <strong>{{ dashboard.metrics.activeAccounts | number }} actifs</strong>
+          <aside class="hero-panel" aria-label="Resume de synchronisation">
+            <span class="material-icons" aria-hidden="true">sync</span>
+            <div>
+              <strong>
+                @if (dashboard.status === 'loading') {
+                  Synchronisation
+                } @else if (dashboard.status === 'error') {
+                  API indisponible
+                } @else {
+                  APIs connectees
+                }
+              </strong>
+              <span>{{ householdId }}</span>
+            </div>
+          </aside>
         </header>
 
-        @if (dashboard.status === 'loading') {
-          <div class="skeleton-list" aria-label="Chargement des comptes">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-        } @else if (dashboard.accounts.length === 0) {
-          <div class="empty-state">
+        @if (dashboard.status === 'error') {
+          <section class="notice-section" role="alert">
+            <span class="material-icons" aria-hidden="true">error</span>
+            <p>{{ dashboard.errorMessage }}</p>
+          </section>
+        }
+
+        <section class="quick-actions" aria-label="Actions rapides">
+          <button type="button" (click)="openModal('transaction')" [disabled]="dashboard.accounts.length === 0">
+            <span class="material-icons" aria-hidden="true">payments</span>
+            Transaction
+          </button>
+          <button type="button" (click)="openModal('account')">
             <span class="material-icons" aria-hidden="true">add_card</span>
-            <p>Aucun compte pour ce foyer.</p>
-          </div>
-        } @else {
-          <div class="account-list">
-            @for (account of dashboard.accounts; track trackAccount($index, account)) {
-              <div class="account-row">
-                <div>
-                  <strong>{{ account.name }}</strong>
-                  <span>{{ account.type }} · {{ account.currency }}</span>
-                </div>
-                <b>{{ account.currentBalance | currency: account.currency : 'symbol' : '1.0-0' }}</b>
-              </div>
-            }
-          </div>
-        }
-      </article>
-
-      <article class="panel insight-panel">
-        <header>
-          <div>
-            <span class="material-icons" aria-hidden="true">donut_large</span>
-            <h2>Categories</h2>
-          </div>
-          <strong>{{ dashboard.metrics.categoryCount | number }}</strong>
-        </header>
-
-        @if (dashboard.status === 'loading') {
-          <div class="skeleton-chart" aria-label="Chargement des categories"></div>
-        } @else if (dashboard.categories.length === 0) {
-          <div class="empty-state">
-            <span class="material-icons" aria-hidden="true">category</span>
-            <p>Aucune categorie configuree.</p>
-          </div>
-        } @else {
-          <div class="category-cloud">
-            @for (category of dashboard.categories; track trackCategory($index, category)) {
-              <span>{{ category.icon }} {{ category.name }}</span>
-            }
-          </div>
-        }
-      </article>
-
-      <article class="panel budget-panel">
-        <header>
-          <div>
-            <span class="material-icons" aria-hidden="true">savings</span>
-            <h2>Budget du mois</h2>
-          </div>
-          @if (dashboard.budget) {
-            <strong>{{ dashboard.budget.consumptionRatio | percent: '1.0-0' }}</strong>
-          }
-        </header>
-
-        @if (dashboard.status === 'loading') {
-          <div class="skeleton-chart" aria-label="Chargement du budget"></div>
-        } @else if (!dashboard.budget) {
-          <div class="empty-state">
+            Compte
+          </button>
+          <button type="button" (click)="openModal('category')">
+            <span class="material-icons" aria-hidden="true">new_label</span>
+            Categorie
+          </button>
+          <button type="button" (click)="openModal('budget')" [disabled]="!!dashboard.budget">
             <span class="material-icons" aria-hidden="true">request_quote</span>
-            <p>Aucun budget pour ce mois.</p>
-          </div>
-        } @else {
-          <div class="budget-summary">
-            <div>
-              <span>Consomme</span>
-              <strong>{{ dashboard.budget.actualAmount | currency: dashboard.budget.currency : 'symbol' : '1.0-0' }}</strong>
-            </div>
-            <div>
-              <span>Prevu</span>
-              <strong>{{ dashboard.budget.totalBudget | currency: dashboard.budget.currency : 'symbol' : '1.0-0' }}</strong>
-            </div>
-          </div>
-          <div class="budget-progress" aria-label="Progression du budget">
-            <span [style.width.%]="dashboard.budget.consumptionRatio * 100"></span>
-          </div>
-          @if (dashboard.budget.allocations.length === 0) {
-            <div class="empty-state compact">
-              <p>Aucune allocation par categorie.</p>
-            </div>
-          } @else {
-            <div class="allocation-list">
-              @for (allocation of dashboard.budget.allocations; track allocation.allocationId) {
-                <div class="allocation-row">
-                  <div>
-                    <strong>{{ allocationCategoryName(allocation, dashboard.categories) }}</strong>
-                    <span>{{ allocation.actualAmount | currency: allocation.currency : 'symbol' : '1.0-0' }} / {{ allocation.plannedAmount | currency: allocation.currency : 'symbol' : '1.0-0' }}</span>
-                  </div>
-                  <b>{{ allocation.consumptionRatio | percent: '1.0-0' }}</b>
-                </div>
-              }
-            </div>
-          }
-        }
-      </article>
+            Budget
+          </button>
+          <button type="button" (click)="openModal('allocation')" [disabled]="!dashboard.budget || dashboard.categories.length === 0">
+            <span class="material-icons" aria-hidden="true">playlist_add_check</span>
+            Allocation
+          </button>
+        </section>
 
-      <article class="panel transactions-panel">
-        <header>
-          <div>
-            <span class="material-icons" aria-hidden="true">receipt_long</span>
-            <h2>Transactions recentes</h2>
-          </div>
-          <strong>{{ dashboard.transactions.length | number }}</strong>
-        </header>
-
-        @if (dashboard.status === 'loading') {
-          <div class="skeleton-list" aria-label="Chargement des transactions">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-        } @else if (dashboard.transactions.length === 0) {
-          <div class="empty-state">
-            <span class="material-icons" aria-hidden="true">playlist_add</span>
-            <p>Aucune transaction enregistree.</p>
-          </div>
-        } @else {
-          <div class="transaction-list">
-            @for (transaction of dashboard.transactions; track trackTransaction($index, transaction)) {
-              <div class="transaction-row">
-                <div>
-                  <strong>{{ categoryName(transaction, dashboard.categories) }}</strong>
-                  <span>{{ transaction.transactionDate | date: 'dd/MM/yyyy' }} · {{ transaction.type }}</span>
-                </div>
-                <b>{{ transaction.amount | currency: transaction.currency : 'symbol' : '1.0-0' }}</b>
-              </div>
-            }
-          </div>
-        }
-      </article>
-
-      <article class="panel notifications-panel">
-        <header>
-          <div>
-            <span class="material-icons" aria-hidden="true">notifications_active</span>
-            <h2>Alertes budget</h2>
-          </div>
-          <strong>{{ dashboard.notifications.length | number }}</strong>
-        </header>
-
-        @if (dashboard.status === 'loading') {
-          <div class="skeleton-list" aria-label="Chargement des alertes">
-            <span></span>
-            <span></span>
-          </div>
-        } @else if (dashboard.notifications.length === 0) {
-          <div class="empty-state">
-            <span class="material-icons" aria-hidden="true">task_alt</span>
-            <p>Aucune alerte budget.</p>
-          </div>
-        } @else {
-          <div class="notification-list">
-            @for (notification of dashboard.notifications; track trackNotification($index, notification)) {
-              <div class="notification-row" [class.unread]="!notification.readAt">
-                <div>
-                  <strong>{{ notification.title }}</strong>
-                  <span>{{ notification.body }}</span>
-                  <small>{{ notification.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
-                </div>
-                <button type="button" class="icon-button" [disabled]="!!notification.readAt || actionStatus === 'saving'" (click)="markNotificationRead(notification)" aria-label="Marquer l'alerte comme lue">
-                  <span class="material-icons" aria-hidden="true">done</span>
-                </button>
-              </div>
-            }
-          </div>
-        }
-      </article>
-
-      <article class="panel command-panel">
-        <header>
-          <div>
-            <span class="material-icons" aria-hidden="true">bolt</span>
-            <h2>Actions</h2>
-          </div>
-        </header>
         @if (actionMessage) {
           <p class="action-message">{{ actionMessage }}</p>
         }
 
-        <form class="action-form" [formGroup]="accountForm" (ngSubmit)="createAccount()">
-          <h3>Nouveau compte</h3>
-          <label>
-            Nom
-            <input type="text" formControlName="name" placeholder="Compte courant" />
-          </label>
-          <div class="form-grid">
-            <label>
-              Type
-              <select formControlName="type">
-                @for (type of accountTypes; track type) {
-                  <option [value]="type">{{ type }}</option>
-                }
-              </select>
-            </label>
-            <label>
-              Solde initial
-              <input type="number" min="0" step="0.01" formControlName="initialBalance" />
-            </label>
-          </div>
-          <div class="form-grid">
-            <label>
-              Devise
-              <input type="text" maxlength="3" formControlName="currency" />
-            </label>
-            <label>
-              Banque
-              <input type="text" formControlName="institutionName" placeholder="Optionnel" />
-            </label>
-          </div>
-          <button type="submit" [disabled]="actionStatus === 'saving'">
-            <span class="material-icons" aria-hidden="true">add_card</span>
-            Ajouter le compte
-          </button>
-        </form>
+        @if (activeSection === 'dashboard') {
+          <section class="metrics-section" aria-label="Indicateurs financiers">
+            <article class="metric-card primary">
+              <span class="material-icons" aria-hidden="true">account_balance_wallet</span>
+              <p>Solde total</p>
+              <strong>{{ dashboard.metrics.totalBalance | currency: 'EUR' : 'symbol' : '1.0-0' }}</strong>
+            </article>
+            <article class="metric-card">
+              <span class="material-icons" aria-hidden="true">south_west</span>
+              <p>Revenus du mois</p>
+              <strong>{{ dashboard.metrics.monthlyIncome | currency: 'EUR' : 'symbol' : '1.0-0' }}</strong>
+            </article>
+            <article class="metric-card">
+              <span class="material-icons" aria-hidden="true">north_east</span>
+              <p>Depenses du mois</p>
+              <strong>{{ dashboard.metrics.monthlyExpenses | currency: 'EUR' : 'symbol' : '1.0-0' }}</strong>
+            </article>
+            <article class="metric-card">
+              <span class="material-icons" aria-hidden="true">trending_up</span>
+              <p>Flux net</p>
+              <strong>{{ dashboard.metrics.netFlow | currency: 'EUR' : 'symbol' : '1.0-0' }}</strong>
+            </article>
+            <article class="metric-card">
+              <span class="material-icons" aria-hidden="true">pie_chart</span>
+              <p>Budget consomme</p>
+              <strong>{{ dashboard.metrics.budgetConsumption | percent: '1.0-0' }}</strong>
+            </article>
+          </section>
+        }
 
-        <form class="action-form" [formGroup]="categoryForm" (ngSubmit)="createCategory()">
-          <h3>Nouvelle categorie</h3>
-          <div class="form-grid">
-            <label>
-              Nom
-              <input type="text" formControlName="name" placeholder="Courses" />
-            </label>
-            <label>
-              Icone
-              <input type="text" formControlName="icon" placeholder="shopping_cart" />
-            </label>
-          </div>
-          <button type="submit" [disabled]="actionStatus === 'saving'">
-            <span class="material-icons" aria-hidden="true">new_label</span>
-            Ajouter la categorie
-          </button>
-        </form>
+        <section class="workspace-grid" [class.focus-layout]="activeSection !== 'dashboard'" aria-label="Espace financier">
+          @if (activeSection === 'dashboard' || activeSection === 'accounts') {
+            <article class="panel accounts-panel">
+              <header>
+                <div>
+                  <span class="material-icons" aria-hidden="true">account_balance</span>
+                  <h2>Comptes</h2>
+                </div>
+                <strong>{{ dashboard.metrics.activeAccounts | number }} actifs</strong>
+              </header>
 
-        <form class="action-form" [formGroup]="budgetForm" (ngSubmit)="createBudget()">
-          <h3>Budget mensuel</h3>
-          <div class="form-grid">
-            <label>
-              Budget total
-              <input type="number" min="0.01" step="0.01" formControlName="totalBudget" />
-            </label>
-            <label>
-              Devise
-              <input type="text" maxlength="3" formControlName="currency" />
-            </label>
-          </div>
-          <button type="submit" [disabled]="actionStatus === 'saving' || !!dashboard.budget">
-            <span class="material-icons" aria-hidden="true">request_quote</span>
-            Creer le budget
-          </button>
-        </form>
-
-        <form class="action-form" [formGroup]="allocationForm" (ngSubmit)="setBudgetAllocation(dashboard.budget)">
-          <h3>Allocation budgetaire</h3>
-          <div class="form-grid">
-            <label>
-              Categorie
-              <select formControlName="categoryId">
-                <option value="">Selectionner</option>
-                @for (category of dashboard.categories; track trackCategory($index, category)) {
-                  <option [value]="category.categoryId">{{ category.name }}</option>
-                }
-              </select>
-            </label>
-            <label>
-              Montant prevu
-              <input type="number" min="0.01" step="0.01" formControlName="plannedAmount" />
-            </label>
-          </div>
-          <button type="submit" [disabled]="actionStatus === 'saving' || !dashboard.budget || dashboard.categories.length === 0">
-            <span class="material-icons" aria-hidden="true">playlist_add_check</span>
-            Definir l'allocation
-          </button>
-        </form>
-
-        <form class="action-form" [formGroup]="transactionForm" (ngSubmit)="createTransaction()">
-          <h3>Nouvelle transaction</h3>
-          <label>
-            Compte
-            <select formControlName="accountId">
-              <option value="">Selectionner</option>
-              @for (account of dashboard.accounts; track trackAccount($index, account)) {
-                <option [value]="account.accountId">{{ account.name }}</option>
+              @if (dashboard.status === 'loading') {
+                <div class="skeleton-list" aria-label="Chargement des comptes">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              } @else if (dashboard.accounts.length === 0) {
+                <div class="empty-state">
+                  <span class="material-icons" aria-hidden="true">add_card</span>
+                  <p>Aucun compte pour ce foyer.</p>
+                </div>
+              } @else {
+                <div class="account-list">
+                  @for (account of dashboard.accounts; track trackAccount($index, account)) {
+                    <div class="account-row">
+                      <div>
+                        <strong>{{ account.name }}</strong>
+                        <span>{{ account.type }} · {{ account.currency }}</span>
+                      </div>
+                      <b>{{ account.currentBalance | currency: account.currency : 'symbol' : '1.0-0' }}</b>
+                    </div>
+                  }
+                </div>
               }
-            </select>
-          </label>
-          <div class="form-grid">
-            <label>
-              Type
-              <select formControlName="type">
-                @for (type of transactionTypes; track type) {
-                  <option [value]="type">{{ type }}</option>
+            </article>
+          }
+
+          @if (activeSection === 'dashboard') {
+            <article class="panel insight-panel">
+              <header>
+                <div>
+                  <span class="material-icons" aria-hidden="true">donut_large</span>
+                  <h2>Categories</h2>
+                </div>
+                <strong>{{ dashboard.metrics.categoryCount | number }}</strong>
+              </header>
+
+              @if (dashboard.status === 'loading') {
+                <div class="skeleton-chart" aria-label="Chargement des categories"></div>
+              } @else if (dashboard.categories.length === 0) {
+                <div class="empty-state">
+                  <span class="material-icons" aria-hidden="true">category</span>
+                  <p>Aucune categorie configuree.</p>
+                </div>
+              } @else {
+                <div class="category-cloud">
+                  @for (category of dashboard.categories; track trackCategory($index, category)) {
+                    <span>{{ category.icon }} {{ category.name }}</span>
+                  }
+                </div>
+              }
+            </article>
+          }
+
+          @if (activeSection === 'dashboard' || activeSection === 'budgets') {
+            <article class="panel budget-panel">
+              <header>
+                <div>
+                  <span class="material-icons" aria-hidden="true">savings</span>
+                  <h2>Budget du mois</h2>
+                </div>
+                @if (dashboard.budget) {
+                  <strong>{{ dashboard.budget.consumptionRatio | percent: '1.0-0' }}</strong>
                 }
-              </select>
-            </label>
-            <label>
-              Montant
-              <input type="number" min="0.01" step="0.01" formControlName="amount" />
-            </label>
-          </div>
-          <div class="form-grid">
-            <label>
-              Date
-              <input type="date" formControlName="transactionDate" />
-            </label>
-            <label>
-              Categorie
-              <select formControlName="categoryId">
-                <option value="">Aucune</option>
-                @for (category of dashboard.categories; track trackCategory($index, category)) {
-                  <option [value]="category.categoryId">{{ category.name }}</option>
+              </header>
+
+              @if (dashboard.status === 'loading') {
+                <div class="skeleton-chart" aria-label="Chargement du budget"></div>
+              } @else if (!dashboard.budget) {
+                <div class="empty-state">
+                  <span class="material-icons" aria-hidden="true">request_quote</span>
+                  <p>Aucun budget pour ce mois.</p>
+                </div>
+              } @else {
+                <div class="budget-summary">
+                  <div>
+                    <span>Consomme</span>
+                    <strong>{{ dashboard.budget.actualAmount | currency: dashboard.budget.currency : 'symbol' : '1.0-0' }}</strong>
+                  </div>
+                  <div>
+                    <span>Prevu</span>
+                    <strong>{{ dashboard.budget.totalBudget | currency: dashboard.budget.currency : 'symbol' : '1.0-0' }}</strong>
+                  </div>
+                </div>
+                <div class="budget-progress" aria-label="Progression du budget">
+                  <span [style.width.%]="dashboard.budget.consumptionRatio * 100"></span>
+                </div>
+                @if (dashboard.budget.allocations.length === 0) {
+                  <div class="empty-state compact">
+                    <p>Aucune allocation par categorie.</p>
+                  </div>
+                } @else {
+                  <div class="allocation-list">
+                    @for (allocation of dashboard.budget.allocations; track allocation.allocationId) {
+                      <div class="allocation-row">
+                        <div>
+                          <strong>{{ allocationCategoryName(allocation, dashboard.categories) }}</strong>
+                          <span>{{ allocation.actualAmount | currency: allocation.currency : 'symbol' : '1.0-0' }} / {{ allocation.plannedAmount | currency: allocation.currency : 'symbol' : '1.0-0' }}</span>
+                        </div>
+                        <b>{{ allocation.consumptionRatio | percent: '1.0-0' }}</b>
+                      </div>
+                    }
+                  </div>
                 }
-              </select>
-            </label>
-          </div>
-          <label>
-            Marchand
-            <input type="text" formControlName="merchant" placeholder="Optionnel" />
-          </label>
-          <label>
-            Note
-            <input type="text" formControlName="description" placeholder="Optionnel" />
-          </label>
-          <button type="submit" [disabled]="actionStatus === 'saving' || dashboard.accounts.length === 0">
-            <span class="material-icons" aria-hidden="true">payments</span>
-            Ajouter la transaction
-          </button>
-        </form>
-      </article>
-    </section>
+              }
+            </article>
+          }
+
+          @if (activeSection === 'dashboard' || activeSection === 'transactions') {
+            <article class="panel transactions-panel">
+              <header>
+                <div>
+                  <span class="material-icons" aria-hidden="true">receipt_long</span>
+                  <h2>Transactions recentes</h2>
+                </div>
+                <strong>{{ dashboard.transactions.length | number }}</strong>
+              </header>
+
+              @if (dashboard.status === 'loading') {
+                <div class="skeleton-list" aria-label="Chargement des transactions">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              } @else if (dashboard.transactions.length === 0) {
+                <div class="empty-state">
+                  <span class="material-icons" aria-hidden="true">playlist_add</span>
+                  <p>Aucune transaction enregistree.</p>
+                </div>
+              } @else {
+                <div class="transaction-list">
+                  @for (transaction of dashboard.transactions; track trackTransaction($index, transaction)) {
+                    <div class="transaction-row">
+                      <div>
+                        <strong>{{ categoryName(transaction, dashboard.categories) }}</strong>
+                        <span>{{ transaction.transactionDate | date: 'dd/MM/yyyy' }} · {{ transaction.type }}</span>
+                      </div>
+                      <b>{{ transaction.amount | currency: transaction.currency : 'symbol' : '1.0-0' }}</b>
+                    </div>
+                  }
+                </div>
+              }
+            </article>
+          }
+
+          @if (activeSection === 'dashboard' || activeSection === 'notifications') {
+            <article class="panel notifications-panel">
+              <header>
+                <div>
+                  <span class="material-icons" aria-hidden="true">notifications_active</span>
+                  <h2>Alertes budget</h2>
+                </div>
+                <strong>{{ dashboard.notifications.length | number }}</strong>
+              </header>
+
+              @if (dashboard.status === 'loading') {
+                <div class="skeleton-list" aria-label="Chargement des alertes">
+                  <span></span>
+                  <span></span>
+                </div>
+              } @else if (dashboard.notifications.length === 0) {
+                <div class="empty-state">
+                  <span class="material-icons" aria-hidden="true">task_alt</span>
+                  <p>Aucune alerte budget.</p>
+                </div>
+              } @else {
+                <div class="notification-list">
+                  @for (notification of dashboard.notifications; track trackNotification($index, notification)) {
+                    <div class="notification-row" [class.unread]="!notification.readAt">
+                      <div>
+                        <strong>{{ notification.title }}</strong>
+                        <span>{{ notification.body }}</span>
+                        <small>{{ notification.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+                      </div>
+                      <button type="button" class="icon-button" [disabled]="!!notification.readAt || actionStatus === 'saving'" (click)="markNotificationRead(notification)" aria-label="Marquer l'alerte comme lue">
+                        <span class="material-icons" aria-hidden="true">done</span>
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+            </article>
+          }
+        </section>
+
+        @if (activeModal) {
+          <section class="modal-backdrop" role="presentation" (click)="closeModal()">
+            <div class="modal-panel" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+              <header>
+                <div>
+                  <span class="material-icons" aria-hidden="true">bolt</span>
+                  <h2>
+                    @switch (activeModal) {
+                      @case ('account') { Nouveau compte }
+                      @case ('category') { Nouvelle categorie }
+                      @case ('budget') { Budget mensuel }
+                      @case ('allocation') { Allocation budgetaire }
+                      @case ('transaction') { Nouvelle transaction }
+                    }
+                  </h2>
+                </div>
+                <button type="button" class="icon-button" (click)="closeModal()" aria-label="Fermer">
+                  <span class="material-icons" aria-hidden="true">close</span>
+                </button>
+              </header>
+
+              @switch (activeModal) {
+                @case ('account') {
+                  <form class="action-form" [formGroup]="accountForm" (ngSubmit)="createAccount()">
+                    <label>
+                      Nom
+                      <input type="text" formControlName="name" placeholder="Compte courant" />
+                    </label>
+                    <div class="form-grid">
+                      <label>
+                        Type
+                        <select formControlName="type">
+                          @for (type of accountTypes; track type) {
+                            <option [value]="type">{{ type }}</option>
+                          }
+                        </select>
+                      </label>
+                      <label>
+                        Solde initial
+                        <input type="number" min="0" step="0.01" formControlName="initialBalance" />
+                      </label>
+                    </div>
+                    <div class="form-grid">
+                      <label>
+                        Devise
+                        <input type="text" maxlength="3" formControlName="currency" />
+                      </label>
+                      <label>
+                        Banque
+                        <input type="text" formControlName="institutionName" placeholder="Optionnel" />
+                      </label>
+                    </div>
+                    <button type="submit" [disabled]="actionStatus === 'saving'">
+                      <span class="material-icons" aria-hidden="true">add_card</span>
+                      Ajouter le compte
+                    </button>
+                  </form>
+                }
+
+                @case ('category') {
+                  <form class="action-form" [formGroup]="categoryForm" (ngSubmit)="createCategory()">
+                    <div class="form-grid">
+                      <label>
+                        Nom
+                        <input type="text" formControlName="name" placeholder="Courses" />
+                      </label>
+                      <label>
+                        Icone
+                        <input type="text" formControlName="icon" placeholder="shopping_cart" />
+                      </label>
+                    </div>
+                    <button type="submit" [disabled]="actionStatus === 'saving'">
+                      <span class="material-icons" aria-hidden="true">new_label</span>
+                      Ajouter la categorie
+                    </button>
+                  </form>
+                }
+
+                @case ('budget') {
+                  <form class="action-form" [formGroup]="budgetForm" (ngSubmit)="createBudget()">
+                    <div class="form-grid">
+                      <label>
+                        Budget total
+                        <input type="number" min="0.01" step="0.01" formControlName="totalBudget" />
+                      </label>
+                      <label>
+                        Devise
+                        <input type="text" maxlength="3" formControlName="currency" />
+                      </label>
+                    </div>
+                    <button type="submit" [disabled]="actionStatus === 'saving' || !!dashboard.budget">
+                      <span class="material-icons" aria-hidden="true">request_quote</span>
+                      Creer le budget
+                    </button>
+                  </form>
+                }
+
+                @case ('allocation') {
+                  <form class="action-form" [formGroup]="allocationForm" (ngSubmit)="setBudgetAllocation(dashboard.budget)">
+                    <div class="form-grid">
+                      <label>
+                        Categorie
+                        <select formControlName="categoryId">
+                          <option value="">Selectionner</option>
+                          @for (category of dashboard.categories; track trackCategory($index, category)) {
+                            <option [value]="category.categoryId">{{ category.name }}</option>
+                          }
+                        </select>
+                      </label>
+                      <label>
+                        Montant prevu
+                        <input type="number" min="0.01" step="0.01" formControlName="plannedAmount" />
+                      </label>
+                    </div>
+                    <button type="submit" [disabled]="actionStatus === 'saving' || !dashboard.budget || dashboard.categories.length === 0">
+                      <span class="material-icons" aria-hidden="true">playlist_add_check</span>
+                      Definir l'allocation
+                    </button>
+                  </form>
+                }
+
+                @case ('transaction') {
+                  <form class="action-form" [formGroup]="transactionForm" (ngSubmit)="createTransaction()">
+                    <label>
+                      Compte
+                      <select formControlName="accountId">
+                        <option value="">Selectionner</option>
+                        @for (account of dashboard.accounts; track trackAccount($index, account)) {
+                          <option [value]="account.accountId">{{ account.name }}</option>
+                        }
+                      </select>
+                    </label>
+                    <div class="form-grid">
+                      <label>
+                        Type
+                        <select formControlName="type">
+                          @for (type of transactionTypes; track type) {
+                            <option [value]="type">{{ type }}</option>
+                          }
+                        </select>
+                      </label>
+                      <label>
+                        Montant
+                        <input type="number" min="0.01" step="0.01" formControlName="amount" />
+                      </label>
+                    </div>
+                    <div class="form-grid">
+                      <label>
+                        Date
+                        <input type="date" formControlName="transactionDate" />
+                      </label>
+                      <label>
+                        Categorie
+                        <select formControlName="categoryId">
+                          <option value="">Aucune</option>
+                          @for (category of dashboard.categories; track trackCategory($index, category)) {
+                            <option [value]="category.categoryId">{{ category.name }}</option>
+                          }
+                        </select>
+                      </label>
+                    </div>
+                    <label>
+                      Marchand
+                      <input type="text" formControlName="merchant" placeholder="Optionnel" />
+                    </label>
+                    <label>
+                      Note
+                      <input type="text" formControlName="description" placeholder="Optionnel" />
+                    </label>
+                    <button type="submit" [disabled]="actionStatus === 'saving' || dashboard.accounts.length === 0">
+                      <span class="material-icons" aria-hidden="true">payments</span>
+                      Ajouter la transaction
+                    </button>
+                  </form>
+                }
+              }
+            </div>
+          </section>
+        }
+      </div>
+    </div>
   }
 
   <router-outlet />

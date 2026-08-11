@@ -16,28 +16,111 @@
   min-height: 100vh;
 }
 
-.hero-section,
+.access-screen,
+.app-frame,
+.app-content,
+.top-bar,
+.quick-actions,
 .metrics-section,
 .workspace-grid,
 .notice-section {
   box-sizing: border-box;
   margin: 0;
-  padding-inline: clamp(1rem, 4vw, 4rem);
   width: 100%;
 }
 
-.hero-section {
-  align-items: end;
+.access-screen {
+  align-items: center;
   display: grid;
-  gap: 1rem;
-  grid-template-columns: minmax(0, 1fr) minmax(18rem, 26rem);
-  min-height: 24rem;
-  padding-bottom: 2rem;
-  padding-top: 7rem;
+  min-height: 100vh;
+  padding: clamp(1rem, 4vw, 4rem);
 }
 
-.hero-copy {
-  max-width: 58rem;
+.access-panel {
+  backdrop-filter: blur(18px);
+  background: rgba(28, 31, 27, 0.9);
+  border: 1px solid rgba(244, 241, 232, 0.14);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+  max-width: 34rem;
+  padding: clamp(1.25rem, 4vw, 2rem);
+}
+
+.access-panel p:not(.eyebrow) {
+  color: #d8d0bd;
+  line-height: 1.7;
+  margin: 1rem 0 1.25rem;
+}
+
+.app-frame {
+  display: grid;
+  grid-template-columns: 17rem minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.side-nav {
+  background: rgba(12, 15, 12, 0.88);
+  border-right: 1px solid rgba(244, 241, 232, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 100vh;
+  padding: 1rem;
+  position: sticky;
+  top: 0;
+}
+
+.brand-mark,
+.nav-links button,
+.sign-out-button,
+.top-bar,
+.quick-actions {
+  align-items: center;
+  display: flex;
+}
+
+.brand-mark {
+  gap: 0.75rem;
+  min-height: 3.5rem;
+}
+
+.brand-mark .material-icons {
+  color: #f2cf72;
+}
+
+.brand-mark strong {
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.nav-links {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.nav-links button,
+.sign-out-button {
+  justify-content: flex-start;
+}
+
+.nav-links button.active {
+  background: rgba(149, 199, 161, 0.16);
+  border-color: rgba(149, 199, 161, 0.28);
+}
+
+.sign-out-button {
+  margin-top: auto;
+}
+
+.app-content {
+  min-width: 0;
+  padding: clamp(1rem, 3vw, 2rem);
+}
+
+.top-bar {
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 1rem;
 }
 
 .eyebrow {
@@ -91,6 +174,17 @@ h1 {
   padding: 1rem;
 }
 
+.quick-actions {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.quick-actions button {
+  flex: 0 1 auto;
+  min-width: 9.5rem;
+}
+
 .hero-panel .material-icons,
 .notice-section .material-icons {
   color: #c5a657;
@@ -119,6 +213,7 @@ h1 {
   gap: 0.75rem;
   margin-bottom: 1rem;
   padding-block: 1rem;
+  padding-inline: 1rem;
 }
 
 .notice-section p {
@@ -166,6 +261,14 @@ h1 {
   gap: 1rem;
   grid-template-columns: minmax(18rem, 1fr) minmax(18rem, 0.9fr) minmax(20rem, 1.25fr);
   padding-bottom: 4rem;
+}
+
+.workspace-grid.focus-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.workspace-grid.focus-layout .panel {
+  min-height: 28rem;
 }
 
 .panel {
@@ -293,6 +396,45 @@ h1 {
   flex: 0 0 2.35rem;
   min-height: 2.35rem;
   padding: 0;
+}
+
+.modal-backdrop {
+  align-items: center;
+  background: rgba(5, 7, 5, 0.68);
+  display: grid;
+  inset: 0;
+  padding: 1rem;
+  position: fixed;
+  z-index: 20;
+}
+
+.modal-panel {
+  backdrop-filter: blur(18px);
+  background: rgba(28, 31, 27, 0.96);
+  border: 1px solid rgba(244, 241, 232, 0.16);
+  border-radius: 8px;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.5);
+  justify-self: center;
+  max-height: calc(100vh - 2rem);
+  max-width: 42rem;
+  overflow: auto;
+  padding: 1rem;
+  width: min(100%, 42rem);
+}
+
+.modal-panel > header {
+  align-items: center;
+  border-bottom: 1px solid rgba(244, 241, 232, 0.12);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+}
+
+.modal-panel > header div {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
 }
 
 .category-cloud {
@@ -482,9 +624,36 @@ button:disabled {
 }
 
 @media (max-width: 1080px) {
-  .hero-section,
+  .app-frame,
   .workspace-grid {
     grid-template-columns: 1fr;
+  }
+
+  .side-nav {
+    border-bottom: 1px solid rgba(244, 241, 232, 0.1);
+    border-right: 0;
+    min-height: auto;
+    position: static;
+  }
+
+  .brand-mark,
+  .nav-links,
+  .side-nav {
+    flex-direction: row;
+  }
+
+  .side-nav {
+    overflow-x: auto;
+  }
+
+  .nav-links {
+    display: flex;
+    min-width: max-content;
+  }
+
+  .sign-out-button {
+    margin-left: auto;
+    margin-top: 0;
   }
 
   .metrics-section {
@@ -497,16 +666,16 @@ button:disabled {
 }
 
 @media (max-width: 640px) {
-  .hero-section,
+  .app-content,
   .metrics-section,
   .workspace-grid,
   .notice-section {
-    padding-inline: 1rem;
+    padding-inline: 0;
   }
 
-  .hero-section {
-    min-height: 22rem;
-    padding-top: 5rem;
+  .top-bar {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   h1 {
@@ -537,5 +706,10 @@ button:disabled {
 
   .icon-button {
     width: 100%;
+  }
+
+  .quick-actions button,
+  .sign-out-button {
+    min-width: max-content;
   }
 }
