@@ -8,6 +8,8 @@ describe('App', () => {
   let http: HttpTestingController;
 
   beforeEach(async () => {
+    localStorage.clear();
+
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [provideHttpClient(), provideHttpClientTesting()],

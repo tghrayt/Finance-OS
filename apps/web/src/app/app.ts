@@ -6,6 +6,7 @@ import { RouterOutlet } from '@angular/router';
 import { catchError, finalize, forkJoin, map, Observable, of, shareReplay, startWith, Subject, switchMap, throwError } from 'rxjs';
 
 import { BudgetApiService, MonthlyBudget } from './budget/budget-api.service';
+import { AuthSessionService } from './core/auth/auth-session.service';
 import {
   FinanceAccount,
   FinanceApiService,
@@ -14,8 +15,6 @@ import {
   FinanceTransaction,
 } from './finance/finance-api.service';
 import { InAppNotification, NotificationApiService } from './notification/notification-api.service';
-
-const DEMO_HOUSEHOLD_ID = '00000000-0000-0000-0000-000000000000';
 
 type AppSection = 'dashboard' | 'accounts' | 'transactions' | 'budgets' | 'notifications';
 type CreationModal = 'account' | 'category' | 'budget' | 'allocation' | 'transaction';
@@ -49,7 +48,7 @@ interface DashboardState {
 })
 export class App {
   protected readonly dashboard$: Observable<DashboardState>;
-  protected readonly householdId = DEMO_HOUSEHOLD_ID;
+  protected readonly session = inject(AuthSessionService).session;
   protected readonly navItems: ReadonlyArray<{ section: AppSection; label: string; icon: string }> = [
     { section: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
     { section: 'accounts', label: 'Comptes', icon: 'account_balance' },
@@ -61,12 +60,13 @@ export class App {
   protected readonly transactionTypes = ['Expense', 'Income'];
   protected activeSection: AppSection = 'dashboard';
   protected activeModal: CreationModal | null = null;
-  protected demoAccessGranted = false;
+  protected demoAccessGranted = !!this.session();
   protected actionStatus: 'idle' | 'saving' = 'idle';
   protected actionMessage = '';
   private readonly financeApi = inject(FinanceApiService);
   private readonly budgetApi = inject(BudgetApiService);
   private readonly notificationApi = inject(NotificationApiService);
+  private readonly authSession = inject(AuthSessionService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly refreshDashboard$ = new Subject<void>();
   private readonly now = new Date();
@@ -159,10 +159,12 @@ export class App {
       return;
     }
 
+    this.authSession.startDemoSession(this.accessForm.getRawValue().email.trim());
     this.demoAccessGranted = true;
   }
 
   protected signOut(): void {
+    this.authSession.clearSession();
     this.demoAccessGranted = false;
     this.activeModal = null;
     this.activeSection = 'dashboard';
@@ -191,6 +193,10 @@ export class App {
 
   protected allocationCategoryName(allocation: { categoryId: string }, categories: FinanceCategory[]): string {
     return categories.find((category) => category.categoryId === allocation.categoryId)?.name ?? 'Categorie';
+  }
+
+  protected get householdId(): string {
+    return this.authSession.householdId();
   }
 
   protected createAccount(): void {
