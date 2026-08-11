@@ -34,7 +34,7 @@ The deployment foundation is:
 - GitHub Actions sends only the Kubernetes manifests to a temporary folder on the VM.
 - k3s applies the Kubernetes manifests from that temporary folder.
 - k3s updates the running deployments to the exact commit image tag.
-- `financeos-finance-api`, `financeos-budget-api` and `financeos-notification-api` are deployed when their Kubernetes secrets and backing PostgreSQL/RabbitMQ services are available.
+- `financeos-identity-api`, `financeos-finance-api`, `financeos-budget-api` and `financeos-notification-api` are deployed when their Kubernetes secrets and backing PostgreSQL/RabbitMQ services are available.
 
 ## Required GitHub secrets
 
@@ -80,11 +80,13 @@ mkdir -p /tmp/financeos-deploy
 tar -xzf /tmp/financeos-k8s.tar.gz -C /tmp/financeos-deploy
 sudo -n kubectl apply -k /tmp/financeos-deploy/infrastructure/k8s/overlays/production
 sudo -n kubectl -n financeos set image deployment/financeos-gateway gateway=ghcr.io/tghrayt/finance-os/gateway:$IMAGE_TAG
+sudo -n kubectl -n financeos set image deployment/financeos-identity-api identity-api=ghcr.io/tghrayt/finance-os/identity-api:$IMAGE_TAG
 sudo -n kubectl -n financeos set image deployment/financeos-finance-api finance-api=ghcr.io/tghrayt/finance-os/finance-api:$IMAGE_TAG
 sudo -n kubectl -n financeos set image deployment/financeos-budget-api budget-api=ghcr.io/tghrayt/finance-os/budget-api:$IMAGE_TAG
 sudo -n kubectl -n financeos set image deployment/financeos-notification-api notification-api=ghcr.io/tghrayt/finance-os/notification-api:$IMAGE_TAG
 sudo -n kubectl -n financeos set image deployment/financeos-web web=ghcr.io/tghrayt/finance-os/web:$IMAGE_TAG
 sudo -n kubectl -n financeos rollout status deployment/financeos-gateway
+sudo -n kubectl -n financeos rollout status deployment/financeos-identity-api
 sudo -n kubectl -n financeos rollout status deployment/financeos-finance-api
 sudo -n kubectl -n financeos rollout status deployment/financeos-budget-api
 sudo -n kubectl -n financeos rollout status deployment/financeos-notification-api
@@ -111,7 +113,15 @@ The production Ingress uses the `letsencrypt-http` ClusterIssuer and stores the 
 
 The production overlay also keeps `infrastructure/k8s/overlays/production/ingress.example.yaml` as a reference for future custom domains.
 
-Public API traffic is routed through the gateway under `/api`. Finance endpoints are exposed as:
+Public API traffic is routed through the gateway under `/api`.
+
+Identity endpoints are exposed as:
+
+```text
+https://financeos.51-210-40-78.sslip.io/api/v1/identity/...
+```
+
+Finance endpoints are exposed as:
 
 ```text
 https://financeos.51-210-40-78.sslip.io/api/v1/finance/...
@@ -129,9 +139,9 @@ Notification endpoints are exposed as:
 https://financeos.51-210-40-78.sslip.io/api/v1/notification/...
 ```
 
-## Finance API Kubernetes secrets
+## Runtime Kubernetes secrets
 
-Before deploying `financeos-finance-api`, create the runtime secret in the VM cluster. Replace the values with the actual PostgreSQL and RabbitMQ endpoints used by the `financeos` namespace.
+Before deploying the backend APIs, create the runtime secret in the VM cluster. Replace the values with the actual PostgreSQL and RabbitMQ endpoints used by the `financeos` namespace.
 
 ```bash
 sudo kubectl create namespace financeos --dry-run=client -o yaml | sudo kubectl apply -f -
@@ -145,6 +155,10 @@ sudo kubectl -n financeos create secret generic financeos-finance-api-secrets \
 ```
 
 `Finance__ApplyMigrationsOnStartup=true` is configured in the deployment so the initial `finance` schema migration can be applied automatically when the service starts.
+
+`financeos-identity-api` currently reuses the same PostgreSQL connection secret and applies a separate EF Core `identity` schema with `Identity__ApplyMigrationsOnStartup=true`.
+
+Production sets `Authentication__Jwt__RequireAuthorization=true` for Identity. Anonymous user creation remains available by endpoint design, but protected user and household endpoints require a valid JWT once `Authentication:Jwt:Authority` and `Authentication:Jwt:Audience` are configured.
 
 `financeos-budget-api` currently reuses the same PostgreSQL connection secret and applies a separate EF Core `budget` schema with `Budget__ApplyMigrationsOnStartup=true`.
 

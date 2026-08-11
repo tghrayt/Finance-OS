@@ -18,6 +18,7 @@ jobs:
     env:
       IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
       GATEWAY_IMAGE: ghcr.io/${{ github.repository_owner }}/finance-os/gateway
+      IDENTITY_API_IMAGE: ghcr.io/${{ github.repository_owner }}/finance-os/identity-api
       FINANCE_API_IMAGE: ghcr.io/${{ github.repository_owner }}/finance-os/finance-api
       BUDGET_API_IMAGE: ghcr.io/${{ github.repository_owner }}/finance-os/budget-api
       NOTIFICATION_API_IMAGE: ghcr.io/${{ github.repository_owner }}/finance-os/notification-api
@@ -54,6 +55,16 @@ jobs:
           tags: |
             ${{ env.FINANCE_API_IMAGE }}:${{ env.IMAGE_TAG }}
             ${{ env.FINANCE_API_IMAGE }}:latest
+
+      - name: Build and push identity api image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/services/identity/FinanceOS.Identity.Api/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IDENTITY_API_IMAGE }}:${{ env.IMAGE_TAG }}
+            ${{ env.IDENTITY_API_IMAGE }}:latest
 
       - name: Build and push budget api image
         uses: docker/build-push-action@v6
@@ -121,11 +132,13 @@ jobs:
             tar -xzf /tmp/financeos-k8s.tar.gz -C /tmp/financeos-deploy
             sudo -n kubectl apply -k /tmp/financeos-deploy/infrastructure/k8s/overlays/production
             sudo -n kubectl -n financeos set image deployment/financeos-gateway gateway=${{ env.GATEWAY_IMAGE }}:${{ env.IMAGE_TAG }}
+            sudo -n kubectl -n financeos set image deployment/financeos-identity-api identity-api=${{ env.IDENTITY_API_IMAGE }}:${{ env.IMAGE_TAG }}
             sudo -n kubectl -n financeos set image deployment/financeos-finance-api finance-api=${{ env.FINANCE_API_IMAGE }}:${{ env.IMAGE_TAG }}
             sudo -n kubectl -n financeos set image deployment/financeos-budget-api budget-api=${{ env.BUDGET_API_IMAGE }}:${{ env.IMAGE_TAG }}
             sudo -n kubectl -n financeos set image deployment/financeos-notification-api notification-api=${{ env.NOTIFICATION_API_IMAGE }}:${{ env.IMAGE_TAG }}
             sudo -n kubectl -n financeos set image deployment/financeos-web web=${{ env.WEB_IMAGE }}:${{ env.IMAGE_TAG }}
             sudo -n kubectl -n financeos rollout status deployment/financeos-gateway
+            sudo -n kubectl -n financeos rollout status deployment/financeos-identity-api
             sudo -n kubectl -n financeos rollout status deployment/financeos-finance-api
             sudo -n kubectl -n financeos rollout status deployment/financeos-budget-api
             sudo -n kubectl -n financeos rollout status deployment/financeos-notification-api

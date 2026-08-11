@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - gateway.yaml
+  - identity-api.yaml
   - finance-api.yaml
   - budget-api.yaml
   - notification-api.yaml
