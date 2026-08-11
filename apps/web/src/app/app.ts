@@ -13,6 +13,7 @@ import {
   FinanceSnapshot,
   FinanceTransaction,
 } from './finance/finance-api.service';
+import { InAppNotification, NotificationApiService } from './notification/notification-api.service';
 
 const DEMO_HOUSEHOLD_ID = '00000000-0000-0000-0000-000000000000';
 
@@ -32,6 +33,7 @@ interface DashboardState {
   categories: FinanceCategory[];
   transactions: FinanceTransaction[];
   budget: MonthlyBudget | null;
+  notifications: InAppNotification[];
   metrics: DashboardMetrics;
   errorMessage?: string;
 }
@@ -51,6 +53,7 @@ export class App {
   protected actionMessage = '';
   private readonly financeApi = inject(FinanceApiService);
   private readonly budgetApi = inject(BudgetApiService);
+  private readonly notificationApi = inject(NotificationApiService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly refreshDashboard$ = new Subject<void>();
   private readonly now = new Date();
@@ -98,8 +101,11 @@ export class App {
           budget: this.budgetApi
             .getCurrentBudget(this.householdId, this.now.getFullYear(), this.now.getMonth() + 1)
             .pipe(catchError((error: unknown) => (this.isNotFound(error) ? of(null) : throwError(() => error)))),
+          notifications: this.notificationApi
+            .getInAppNotifications(this.householdId)
+            .pipe(catchError(() => of([]))),
         }).pipe(
-          map(({ finance, budget }) => this.toReadyState(finance, budget)),
+          map(({ finance, budget, notifications }) => this.toReadyState(finance, budget, notifications)),
           startWith(this.toLoadingState()),
           catchError(() =>
             of({
@@ -124,6 +130,10 @@ export class App {
 
   protected trackTransaction(_: number, transaction: FinanceTransaction): string {
     return transaction.transactionId;
+  }
+
+  protected trackNotification(_: number, notification: InAppNotification): string {
+    return notification.notificationId;
   }
 
   protected categoryName(transaction: FinanceTransaction, categories: FinanceCategory[]): string {
@@ -303,11 +313,34 @@ export class App {
       });
   }
 
-  private toReadyState(snapshot: FinanceSnapshot, budget: MonthlyBudget | null): DashboardState {
+  protected markNotificationRead(notification: InAppNotification): void {
+    if (notification.readAt || this.actionStatus === 'saving') {
+      return;
+    }
+
+    this.actionStatus = 'saving';
+    this.actionMessage = '';
+
+    this.notificationApi
+      .markAsRead(this.householdId, notification.notificationId)
+      .pipe(finalize(() => (this.actionStatus = 'idle')))
+      .subscribe({
+        next: () => {
+          this.actionMessage = 'Alerte marquee comme lue.';
+          this.refreshDashboard$.next();
+        },
+        error: () => {
+          this.actionMessage = "Mise a jour de l'alerte impossible pour le moment.";
+        },
+      });
+  }
+
+  private toReadyState(snapshot: FinanceSnapshot, budget: MonthlyBudget | null, notifications: InAppNotification[]): DashboardState {
     return {
       status: 'ready',
       ...snapshot,
       budget,
+      notifications,
       metrics: this.calculateMetrics(snapshot, budget),
     };
   }
@@ -319,6 +352,7 @@ export class App {
       categories: [],
       transactions: [],
       budget: null,
+      notifications: [],
       metrics: {
         totalBalance: 0,
         monthlyIncome: 0,

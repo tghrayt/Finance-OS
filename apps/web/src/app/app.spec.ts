@@ -61,5 +61,8 @@ describe('App', () => {
     http
       .expectOne(`/api/v1/budget/monthly-budgets/current?householdId=00000000-0000-0000-0000-000000000000&year=${year}&month=${month}`)
       .flush('Budget was not found.', { status: 404, statusText: 'Not Found' });
+    http
+      .expectOne('/api/v1/notification/in-app?householdId=00000000-0000-0000-0000-000000000000&page=1&pageSize=6')
+      .flush([]);
   }
 });

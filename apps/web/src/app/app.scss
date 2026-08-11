@@ -177,6 +177,10 @@ h1 {
   grid-row: span 2;
 }
 
+.notifications-panel {
+  min-height: 14rem;
+}
+
 .command-panel {
   display: grid;
   gap: 1rem;
@@ -218,6 +222,7 @@ h1 {
 
 .account-list,
 .allocation-list,
+.notification-list,
 .transaction-list,
 .skeleton-list {
   display: grid;
@@ -226,6 +231,7 @@ h1 {
 
 .account-row,
 .allocation-row,
+.notification-row,
 .transaction-row {
   align-items: center;
   background: rgba(244, 241, 232, 0.055);
@@ -239,6 +245,7 @@ h1 {
 
 .account-row strong,
 .allocation-row strong,
+.notification-row strong,
 .transaction-row strong {
   color: #ffffff;
   display: block;
@@ -247,6 +254,7 @@ h1 {
 
 .account-row span,
 .allocation-row span,
+.notification-row span,
 .transaction-row span {
   color: #b8b09f;
   display: block;
@@ -262,6 +270,29 @@ h1 {
   font-weight: 800;
   margin-left: 1rem;
   white-space: nowrap;
+}
+
+.notification-row {
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.notification-row.unread {
+  background: rgba(197, 166, 87, 0.12);
+  border-color: rgba(197, 166, 87, 0.24);
+}
+
+.notification-row small {
+  color: #817a6d;
+  display: block;
+  font-size: 0.72rem;
+  margin-top: 0.5rem;
+}
+
+.icon-button {
+  flex: 0 0 2.35rem;
+  min-height: 2.35rem;
+  padding: 0;
 }
 
 .category-cloud {
@@ -492,6 +523,7 @@ button:disabled {
   }
 
   .account-row,
+  .notification-row,
   .transaction-row {
     align-items: flex-start;
     flex-direction: column;
@@ -501,5 +533,9 @@ button:disabled {
   .transaction-row b {
     margin-left: 0;
     margin-top: 0.75rem;
+  }
+
+  .icon-button {
+    width: 100%;
   }
 }

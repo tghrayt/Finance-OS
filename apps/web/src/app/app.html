@@ -210,6 +210,43 @@
         }
       </article>
 
+      <article class="panel notifications-panel">
+        <header>
+          <div>
+            <span class="material-icons" aria-hidden="true">notifications_active</span>
+            <h2>Alertes budget</h2>
+          </div>
+          <strong>{{ dashboard.notifications.length | number }}</strong>
+        </header>
+
+        @if (dashboard.status === 'loading') {
+          <div class="skeleton-list" aria-label="Chargement des alertes">
+            <span></span>
+            <span></span>
+          </div>
+        } @else if (dashboard.notifications.length === 0) {
+          <div class="empty-state">
+            <span class="material-icons" aria-hidden="true">task_alt</span>
+            <p>Aucune alerte budget.</p>
+          </div>
+        } @else {
+          <div class="notification-list">
+            @for (notification of dashboard.notifications; track trackNotification($index, notification)) {
+              <div class="notification-row" [class.unread]="!notification.readAt">
+                <div>
+                  <strong>{{ notification.title }}</strong>
+                  <span>{{ notification.body }}</span>
+                  <small>{{ notification.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+                </div>
+                <button type="button" class="icon-button" [disabled]="!!notification.readAt || actionStatus === 'saving'" (click)="markNotificationRead(notification)" aria-label="Marquer l'alerte comme lue">
+                  <span class="material-icons" aria-hidden="true">done</span>
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </article>
+
       <article class="panel command-panel">
         <header>
           <div>
