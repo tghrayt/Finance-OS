@@ -23,6 +23,11 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 80
+          volumeMounts:
+            - name: web-auth-config
+              mountPath: /usr/share/nginx/html/config/auth-config.json
+              subPath: auth-config.json
+              readOnly: true
           readinessProbe:
             httpGet:
               path: /health
@@ -31,6 +36,10 @@ spec:
             httpGet:
               path: /health
               port: 80
+      volumes:
+        - name: web-auth-config
+          configMap:
+            name: financeos-web-auth-config
 ---
 apiVersion: v1
 kind: Service

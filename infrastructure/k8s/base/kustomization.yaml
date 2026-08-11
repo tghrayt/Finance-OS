@@ -7,4 +7,5 @@ resources:
   - finance-api.yaml
   - budget-api.yaml
   - notification-api.yaml
+  - web-auth-config.yaml
   - web.yaml

@@ -27,6 +27,7 @@ describe('App', () => {
   it('should create the app', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
+    flushAuthConfig();
     enterDemoAccess(fixture);
     flushFinanceSnapshot();
 
@@ -37,6 +38,7 @@ describe('App', () => {
   it('should render the finance dashboard title', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
+    flushAuthConfig();
     enterDemoAccess(fixture);
     flushFinanceSnapshot();
     fixture.detectChanges();
@@ -48,6 +50,7 @@ describe('App', () => {
   it('should render an empty accounts state when the API returns no accounts', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
+    flushAuthConfig();
     enterDemoAccess(fixture);
     flushFinanceSnapshot();
     fixture.detectChanges();
@@ -63,6 +66,18 @@ describe('App', () => {
     );
     button?.click();
     fixture.detectChanges();
+  }
+
+  function flushAuthConfig(): void {
+    http.expectOne('/config/auth-config.json').flush({
+      enabled: false,
+      authority: '',
+      clientId: '',
+      redirectUri: 'http://localhost:4200/',
+      postLogoutRedirectUri: 'http://localhost:4200/',
+      knownAuthorities: [],
+      scopes: ['openid', 'profile', 'email'],
+    });
   }
 
   function flushFinanceSnapshot(): void {

@@ -6,6 +6,7 @@ import { filter, finalize, Observable, shareReplay, startWith, Subject, switchMa
 
 import { BudgetApiService, MonthlyBudget } from './budget/budget-api.service';
 import { AuthSessionService } from './core/auth/auth-session.service';
+import { AuthProviderKind } from './core/auth/auth-provider.models';
 import { NAVIGATION_ITEMS } from './core/shell/navigation-items';
 import { AppSection, CreationModal } from './core/shell/shell.models';
 import { DashboardDataService } from './features/dashboard/dashboard-data.service';
@@ -28,6 +29,8 @@ export class App {
   protected readonly dashboard$: Observable<DashboardState>;
   protected readonly session = inject(AuthSessionService).session;
   protected readonly navItems = NAVIGATION_ITEMS;
+  protected readonly authProviders = inject(AuthSessionService).providerOptions;
+  protected readonly hostedAuthStatus = inject(AuthSessionService).hostedAuthStatus;
   protected readonly accountTypes = ['Checking', 'Savings', 'Cash', 'CreditCard', 'Investment', 'Other'];
   protected readonly transactionTypes = ['Expense', 'Income'];
   protected activeSection: AppSection = 'dashboard';
@@ -93,6 +96,8 @@ export class App {
       switchMap(() => this.dashboardData.load(this.householdId)),
       shareReplay({ bufferSize: 1, refCount: true }),
     );
+
+    void this.authSession.initializeHostedAuth();
   }
 
   protected trackAccount(_: number, account: FinanceAccount): string {
@@ -119,6 +124,10 @@ export class App {
 
     this.authSession.startDemoSession(this.accessForm.getRawValue().email.trim());
     this.demoAccessGranted = true;
+  }
+
+  protected async continueWithProvider(provider: AuthProviderKind): Promise<void> {
+    await this.authSession.signInWithProvider(provider);
   }
 
   protected signOut(): void {

@@ -14,6 +14,8 @@ Phase 0 only establishes the project structure. Authentication and authorization
 
 Phase 1 authentication targets OpenID Connect with JWT access tokens and refresh tokens suitable for both Angular web and Ionic mobile clients. FinanceOS must not implement custom password storage or custom cryptography.
 
+The planned customer sign-in methods are email + password with email verification, email one-time passcode, Google sign-in and Microsoft sign-in through Microsoft Entra External ID. Runtime web settings are loaded from `/config/auth-config.json`; this file contains public client settings only.
+
 Identity APIs are prepared for JWT bearer validation through:
 
 - `Authentication:Jwt:RequireAuthorization`

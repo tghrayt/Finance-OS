@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: financeos-web-auth-config
+  namespace: financeos
+  labels:
+    app.kubernetes.io/name: financeos-web
+    app.kubernetes.io/part-of: financeos
+data:
+  auth-config.json: |
+    {
+      "enabled": false,
+      "authority": "",
+      "clientId": "",
+      "redirectUri": "https://financeos.51-210-40-78.sslip.io/",
+      "postLogoutRedirectUri": "https://financeos.51-210-40-78.sslip.io/",
+      "knownAuthorities": [],
+      "scopes": ["openid", "profile", "email"]
+    }
+

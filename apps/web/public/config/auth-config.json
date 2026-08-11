@@ -1,0 +1,10 @@
+{
+  "enabled": false,
+  "authority": "",
+  "clientId": "",
+  "redirectUri": "https://financeos.51-210-40-78.sslip.io/",
+  "postLogoutRedirectUri": "https://financeos.51-210-40-78.sslip.io/",
+  "knownAuthorities": [],
+  "scopes": ["openid", "profile", "email"]
+}
+

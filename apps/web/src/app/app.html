@@ -3,18 +3,41 @@
     <section class="access-screen" aria-labelledby="access-title">
       <div class="access-panel">
         <p class="eyebrow">FinanceOS</p>
-        <h1 id="access-title">Acces a votre espace financier</h1>
-        <p>
-          L'authentification securisee OIDC/JWT arrive avec la prochaine brique Identity.
-          Pour l'instant, cet ecran ouvre un mode demo explicite sur le foyer de test.
+        <h1 id="access-title">Choisissez votre acces</h1>
+        <p class="access-lead">
+          FinanceOS utilisera Microsoft Entra External ID pour verifier l'email,
+          proteger les comptes et relier Google, Microsoft ou email au meme profil financier.
         </p>
 
+        <div class="auth-status" [class.ready]="hostedAuthStatus().ready">
+          <span class="material-icons" aria-hidden="true">
+            {{ hostedAuthStatus().ready ? 'verified' : 'lock' }}
+          </span>
+          <span>{{ hostedAuthStatus().message }}</span>
+        </div>
+
+        <div class="auth-provider-grid" aria-label="Methodes de connexion">
+          @for (provider of authProviders; track provider.kind) {
+            <button type="button" class="auth-provider-card" (click)="continueWithProvider(provider.kind)">
+              <span class="material-icons" aria-hidden="true">{{ provider.icon }}</span>
+              <span>
+                <strong>{{ provider.label }}</strong>
+                <small>{{ provider.description }}</small>
+              </span>
+              @if (provider.recommended) {
+                <b>Recommande</b>
+              }
+            </button>
+          }
+        </div>
+
         <form [formGroup]="accessForm" (ngSubmit)="enterDemoAccess()">
+          <p class="demo-caption">Acces temporaire pendant la configuration Azure</p>
           <label>
-            Email
+            Email demo
             <input type="email" formControlName="email" autocomplete="email" />
           </label>
-          <button type="submit">
+          <button type="submit" class="demo-button">
             <span class="material-icons" aria-hidden="true">login</span>
             Entrer en mode demo
           </button>
