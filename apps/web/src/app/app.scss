@@ -49,7 +49,25 @@
 .access-panel p:not(.eyebrow) {
   color: #d8d0bd;
   line-height: 1.7;
-  margin: 1rem 0 1.25rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.access-panel form {
+  display: grid;
+  gap: 1rem;
+}
+
+.access-panel label {
+  gap: 0.5rem;
+}
+
+.access-panel input {
+  min-height: 3.15rem;
+}
+
+.access-panel button {
+  margin-top: 0.25rem;
+  min-height: 3.25rem;
 }
 
 .app-frame {
