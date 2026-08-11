@@ -2,8 +2,8 @@ import { AsyncPipe, CurrencyPipe, DatePipe, DecimalPipe, PercentPipe } from '@an
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterOutlet } from '@angular/router';
-import { catchError, finalize, forkJoin, map, Observable, of, shareReplay, startWith, Subject, switchMap, throwError } from 'rxjs';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { catchError, filter, finalize, forkJoin, map, Observable, of, shareReplay, startWith, Subject, switchMap, throwError } from 'rxjs';
 
 import { BudgetApiService, MonthlyBudget } from './budget/budget-api.service';
 import { AuthSessionService } from './core/auth/auth-session.service';
@@ -68,6 +68,7 @@ export class App {
   private readonly notificationApi = inject(NotificationApiService);
   private readonly authSession = inject(AuthSessionService);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly router = inject(Router);
   private readonly refreshDashboard$ = new Subject<void>();
   private readonly now = new Date();
 
@@ -110,6 +111,11 @@ export class App {
   });
 
   constructor() {
+    this.syncActiveSection(this.router.url);
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event) => this.syncActiveSection(event.urlAfterRedirects));
+
     this.dashboard$ = this.refreshDashboard$.pipe(
       startWith(undefined),
       switchMap(() =>
@@ -167,11 +173,12 @@ export class App {
     this.authSession.clearSession();
     this.demoAccessGranted = false;
     this.activeModal = null;
-    this.activeSection = 'dashboard';
+    this.setActiveSection('dashboard');
   }
 
   protected setActiveSection(section: AppSection): void {
     this.activeSection = section;
+    void this.router.navigate([`/${section}`]);
   }
 
   protected openModal(modal: CreationModal): void {
@@ -460,5 +467,10 @@ export class App {
 
   private isNotFound(error: unknown): boolean {
     return error instanceof HttpErrorResponse && error.status === 404;
+  }
+
+  private syncActiveSection(url: string): void {
+    const section = url.split('?')[0].split('#')[0].replace('/', '') as AppSection;
+    this.activeSection = this.navItems.some((item) => item.section === section) ? section : 'dashboard';
   }
 }
