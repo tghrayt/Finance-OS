@@ -31,3 +31,37 @@ Fields:
 - `Currency`
 - `CategoryId`
 - `TransactionDate`
+
+## Budget
+
+Budget Service consumes `TransactionCreatedV1` idempotently through its inbox. Expense transactions with a category update the matching monthly budget allocation.
+
+When an allocation crosses meaningful consumption levels, Budget writes events through its transactional outbox:
+
+- `BudgetThresholdReachedV1` for 50%, 75%, 90% and 100%
+- `BudgetExceededV1` when consumption moves above 100%
+
+Budget threshold fields:
+
+- `EventId`
+- `OccurredAt`
+- `CorrelationId`
+- `HouseholdId`
+- `BudgetId`
+- `CategoryId`
+- `Threshold`
+- `PlannedAmount`
+- `ActualAmount`
+- `Currency`
+
+Budget exceeded fields:
+
+- `EventId`
+- `OccurredAt`
+- `CorrelationId`
+- `HouseholdId`
+- `BudgetId`
+- `CategoryId`
+- `PlannedAmount`
+- `ActualAmount`
+- `Currency`

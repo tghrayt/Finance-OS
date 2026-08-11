@@ -9,10 +9,13 @@ public sealed class BudgetDbContext(DbContextOptions<BudgetDbContext> options) :
 
     public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
 
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("budget");
         modelBuilder.ApplyConfiguration(new MonthlyBudgetConfiguration());
         modelBuilder.ApplyConfiguration(new InboxMessageConfiguration());
+        modelBuilder.ApplyConfiguration(new OutboxMessageConfiguration());
     }
 }

@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddDbContext<BudgetDbContext>(options => options.UseNpgsql(connectionString));
         services.AddScoped<IMonthlyBudgetRepository, MonthlyBudgetRepository>();
         services.AddScoped<IBudgetUnitOfWork, BudgetUnitOfWork>();
+        services.AddScoped<IOutboxWriter, OutboxWriter>();
 
         services.AddMassTransit(bus =>
         {
@@ -37,6 +38,7 @@ public static class DependencyInjection
                 cfg.ConfigureEndpoints(context);
             });
         });
+        services.AddHostedService<OutboxPublisher>();
 
         return services;
     }

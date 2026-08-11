@@ -1,5 +1,8 @@
+using FinanceOS.Budget.Application.Abstractions;
+using FinanceOS.Budget.Domain.Budgets;
 using FinanceOS.Budget.Domain.Common;
 using FinanceOS.Budget.Infrastructure.Persistence;
+using FinanceOS.Contracts.Budget;
 using FinanceOS.Contracts.Finance;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -7,9 +10,13 @@ using Microsoft.Extensions.Logging;
 
 namespace FinanceOS.Budget.Infrastructure.Messaging;
 
-public sealed class TransactionCreatedConsumer(BudgetDbContext dbContext, ILogger<TransactionCreatedConsumer> logger) : IConsumer<TransactionCreatedV1>
+public sealed class TransactionCreatedConsumer(
+    BudgetDbContext dbContext,
+    IOutboxWriter outbox,
+    ILogger<TransactionCreatedConsumer> logger) : IConsumer<TransactionCreatedV1>
 {
     private const string ConsumerName = nameof(TransactionCreatedConsumer);
+    private static readonly decimal[] Thresholds = [0.50m, 0.75m, 0.90m, 1.00m];
 
     public async Task Consume(ConsumeContext<TransactionCreatedV1> context)
     {
@@ -46,7 +53,16 @@ public sealed class TransactionCreatedConsumer(BudgetDbContext dbContext, ILogge
             return;
         }
 
+        var allocation = budget.Allocations.FirstOrDefault(item => item.CategoryId == categoryId);
+        if (allocation is null)
+        {
+            await MarkProcessedAsync(message.EventId, context.CancellationToken);
+            return;
+        }
+
+        var previousRatio = allocation.ConsumptionRatio;
         budget.AddExpense(categoryId, message.Amount, message.Currency);
+        AddThresholdEvents(message, budget.Id.Value, allocation, previousRatio);
         await MarkProcessedAsync(message.EventId, context.CancellationToken);
     }
 
@@ -57,5 +73,38 @@ public sealed class TransactionCreatedConsumer(BudgetDbContext dbContext, ILogge
     {
         dbContext.Set<InboxMessage>().Add(new InboxMessage(eventId, ConsumerName, DateTimeOffset.UtcNow));
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private void AddThresholdEvents(TransactionCreatedV1 message, Guid budgetId, BudgetAllocation allocation, decimal previousRatio)
+    {
+        var currentRatio = allocation.ConsumptionRatio;
+        foreach (var threshold in Thresholds.Where(threshold => previousRatio < threshold && currentRatio >= threshold))
+        {
+            outbox.Add(new BudgetThresholdReachedV1(
+                Guid.NewGuid(),
+                DateTimeOffset.UtcNow,
+                message.CorrelationId,
+                message.HouseholdId,
+                budgetId,
+                allocation.CategoryId,
+                threshold,
+                allocation.PlannedAmount,
+                allocation.ActualAmount,
+                allocation.Currency));
+        }
+
+        if (previousRatio <= 1.00m && currentRatio > 1.00m)
+        {
+            outbox.Add(new BudgetExceededV1(
+                Guid.NewGuid(),
+                DateTimeOffset.UtcNow,
+                message.CorrelationId,
+                message.HouseholdId,
+                budgetId,
+                allocation.CategoryId,
+                allocation.PlannedAmount,
+                allocation.ActualAmount,
+                allocation.Currency));
+        }
     }
 }
