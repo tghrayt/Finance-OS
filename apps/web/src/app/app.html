@@ -31,19 +31,6 @@
           }
         </div>
 
-        @if (!hostedAuthStatus().ready) {
-          <form [formGroup]="accessForm" (ngSubmit)="enterDemoAccess()">
-            <p class="demo-caption">Mode demo local</p>
-            <label>
-              Email demo
-              <input type="email" formControlName="email" autocomplete="email" />
-            </label>
-            <button type="submit" class="demo-button">
-              <span class="material-icons" aria-hidden="true">login</span>
-              Entrer en mode demo
-            </button>
-          </form>
-        }
       </div>
     </section>
   } @else if (dashboard$ | async; as dashboard) {

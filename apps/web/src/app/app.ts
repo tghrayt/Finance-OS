@@ -81,10 +81,6 @@ export class App {
     plannedAmount: [100, [Validators.required, Validators.min(0.01)]],
   });
 
-  protected readonly accessForm = this.formBuilder.nonNullable.group({
-    email: ['demo@financeos.local', [Validators.required, Validators.email]],
-  });
-
   constructor() {
     this.syncActiveSection(this.router.url);
     this.router.events
@@ -114,16 +110,6 @@ export class App {
 
   protected trackNotification(_: number, notification: InAppNotification): string {
     return notification.notificationId;
-  }
-
-  protected enterDemoAccess(): void {
-    if (this.accessForm.invalid) {
-      this.accessForm.markAllAsTouched();
-      return;
-    }
-
-    this.authSession.startDemoSession(this.accessForm.getRawValue().email.trim());
-    this.demoAccessGranted = true;
   }
 
   protected async continueWithProvider(provider: AuthProviderKind): Promise<void> {

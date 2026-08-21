@@ -25,10 +25,10 @@ describe('App', () => {
   });
 
   it('should create the app', () => {
+    setDemoSession();
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     flushAuthConfig();
-    enterDemoAccess(fixture);
     flushFinanceSnapshot();
 
     const app = fixture.componentInstance;
@@ -36,10 +36,10 @@ describe('App', () => {
   });
 
   it('should render the finance dashboard title', () => {
+    setDemoSession();
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     flushAuthConfig();
-    enterDemoAccess(fixture);
     flushFinanceSnapshot();
     fixture.detectChanges();
 
@@ -48,10 +48,10 @@ describe('App', () => {
   });
 
   it('should render an empty accounts state when the API returns no accounts', () => {
+    setDemoSession();
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     flushAuthConfig();
-    enterDemoAccess(fixture);
     flushFinanceSnapshot();
     fixture.detectChanges();
 
@@ -59,13 +59,16 @@ describe('App', () => {
     expect(compiled.textContent).toContain('Aucun compte pour ce foyer.');
   });
 
-  function enterDemoAccess(fixture: ReturnType<typeof TestBed.createComponent<App>>): void {
-    const compiled = fixture.nativeElement as HTMLElement;
-    const button = Array.from(compiled.querySelectorAll('button')).find((item) =>
-      item.textContent?.includes('Entrer en mode demo'),
+  function setDemoSession(): void {
+    localStorage.setItem(
+      'financeos.auth.session',
+      JSON.stringify({
+        mode: 'demo',
+        email: 'demo@financeos.local',
+        householdId: '00000000-0000-0000-0000-000000000000',
+        accessToken: null,
+      }),
     );
-    button?.click();
-    fixture.detectChanges();
   }
 
   function flushAuthConfig(): void {
