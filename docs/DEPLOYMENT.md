@@ -160,6 +160,14 @@ sudo kubectl -n financeos create secret generic financeos-finance-api-secrets \
 
 Production sets `Authentication__Jwt__RequireAuthorization=true` for Identity. Anonymous user creation remains available by endpoint design, but protected user and household endpoints require a valid JWT once `Authentication:Jwt:Authority` and `Authentication:Jwt:Audience` are configured.
 
+`financeos-auth-config` provides production JWT settings to Identity:
+
+- `jwt-authority`
+- `jwt-audience`
+
+`financeos-web-auth-config` provides the public browser OIDC settings through `/config/auth-config.json`.
+See `docs/AUTHENTICATION.md` for the Entra External ID activation commands.
+
 `financeos-budget-api` currently reuses the same PostgreSQL connection secret and applies a separate EF Core `budget` schema with `Budget__ApplyMigrationsOnStartup=true`.
 
 `financeos-notification-api` also reuses the same PostgreSQL connection secret for now and applies a separate EF Core `notification` schema with `Notification__ApplyMigrationsOnStartup=true`. It consumes RabbitMQ events emitted by Budget Service and stores in-app notifications.

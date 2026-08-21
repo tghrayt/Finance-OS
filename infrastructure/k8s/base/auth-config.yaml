@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: financeos-auth-config
+  namespace: financeos
+  labels:
+    app.kubernetes.io/name: financeos-auth
+    app.kubernetes.io/part-of: financeos
+data:
+  jwt-authority: ""
+  jwt-audience: ""
+

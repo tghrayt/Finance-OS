@@ -33,6 +33,16 @@ spec:
               value: "true"
             - name: Authentication__Jwt__RequireAuthorization
               value: "true"
+            - name: Authentication__Jwt__Authority
+              valueFrom:
+                configMapKeyRef:
+                  name: financeos-auth-config
+                  key: jwt-authority
+            - name: Authentication__Jwt__Audience
+              valueFrom:
+                configMapKeyRef:
+                  name: financeos-auth-config
+                  key: jwt-audience
           readinessProbe:
             httpGet:
               path: /health/ready

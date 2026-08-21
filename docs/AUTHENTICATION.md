@@ -52,6 +52,13 @@ Create an external tenant, then configure:
 6. A SPA app registration for the Angular web app.
 7. A protected API app registration for FinanceOS backend scopes.
 
+Microsoft setup references:
+
+- External tenant and customer user flows: <https://learn.microsoft.com/en-us/entra/external-id/customers/overview-customers-ciam>
+- Google federation for customer sign-in: <https://learn.microsoft.com/en-us/entra/external-id/customers/how-to-google-federation-customers>
+- Microsoft account federation for customer sign-in: <https://learn.microsoft.com/en-us/entra/external-id/customers/how-to-microsoft-accounts-federation-customers>
+- Protected API scopes: <https://learn.microsoft.com/en-us/entra/identity-platform/scenario-protected-web-api-expose-scopes>
+
 Production redirect URI:
 
 ```text
@@ -76,3 +83,40 @@ Authentication__Jwt__RequireAuthorization=true
 
 Do not set `RequireAuthorization=false` in production. While the frontend can be prepared before Azure values are created, real API protection must wait until Authority and Audience are configured.
 
+## Kubernetes Activation
+
+After the Entra values are available, update the public web configuration:
+
+```bash
+sudo kubectl -n financeos create configmap financeos-web-auth-config \
+  --from-literal=auth-config.json='{
+    "enabled": true,
+    "authority": "https://<tenant-subdomain>.ciamlogin.com/<tenant-id-or-domain>/<user-flow-name>",
+    "clientId": "<spa-application-client-id>",
+    "redirectUri": "https://financeos.51-210-40-78.sslip.io/",
+    "postLogoutRedirectUri": "https://financeos.51-210-40-78.sslip.io/",
+    "knownAuthorities": ["<tenant-subdomain>.ciamlogin.com"],
+    "scopes": ["openid", "profile", "email", "api://<api-application-client-id>/financeos.access"]
+  }' \
+  --dry-run=client -o yaml | sudo kubectl apply -f -
+```
+
+Then update backend JWT validation:
+
+```bash
+sudo kubectl -n financeos create configmap financeos-auth-config \
+  --from-literal=jwt-authority='https://<tenant-subdomain>.ciamlogin.com/<tenant-id-or-domain>/<user-flow-name>' \
+  --from-literal=jwt-audience='api://<api-application-client-id>' \
+  --dry-run=client -o yaml | sudo kubectl apply -f -
+```
+
+Restart the affected deployments:
+
+```bash
+sudo kubectl -n financeos rollout restart deployment/financeos-web
+sudo kubectl -n financeos rollout restart deployment/financeos-identity-api
+sudo kubectl -n financeos rollout status deployment/financeos-web
+sudo kubectl -n financeos rollout status deployment/financeos-identity-api
+```
+
+Keep the Google and Microsoft client secrets only inside the Entra portal identity provider configuration. They must not be stored in FinanceOS source code, GitHub repository variables or frontend config.
