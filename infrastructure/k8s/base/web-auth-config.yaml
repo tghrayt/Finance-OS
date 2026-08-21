@@ -9,12 +9,19 @@ metadata:
 data:
   auth-config.json: |
     {
-      "enabled": false,
-      "authority": "",
-      "clientId": "",
+      "enabled": true,
+      "authority": "https://financeos.ciamlogin.com/",
+      "clientId": "fc46120a-447d-4b74-91cd-b9e059dcc60c",
       "redirectUri": "https://financeos.51-210-40-78.sslip.io/",
       "postLogoutRedirectUri": "https://financeos.51-210-40-78.sslip.io/",
-      "knownAuthorities": [],
-      "scopes": ["openid", "profile", "email"]
+      "knownAuthorities": [
+        "financeos.ciamlogin.com",
+        "e0d6cf1d-ccd7-4190-81dd-36b4b6d5ef78.ciamlogin.com"
+      ],
+      "scopes": [
+        "openid",
+        "profile",
+        "email",
+        "api://d07c7135-bd40-4401-b784-2eacaa274d4e/financeos.access"
+      ]
     }
-

@@ -7,6 +7,5 @@ metadata:
     app.kubernetes.io/name: financeos-auth
     app.kubernetes.io/part-of: financeos
 data:
-  jwt-authority: ""
-  jwt-audience: ""
-
+  jwt-authority: "https://financeos.ciamlogin.com/e0d6cf1d-ccd7-4190-81dd-36b4b6d5ef78/v2.0"
+  jwt-audience: "api://d07c7135-bd40-4401-b784-2eacaa274d4e"
