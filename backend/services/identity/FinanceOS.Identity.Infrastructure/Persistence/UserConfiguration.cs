@@ -35,6 +35,15 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(user => user.Email)
             .IsUnique();
 
+        builder.Property(user => user.ExternalSubject)
+            .HasMaxLength(200)
+            .HasColumnName("external_subject")
+            .IsRequired();
+
+        builder.HasIndex(user => user.ExternalSubject)
+            .HasFilter("external_subject <> ''")
+            .IsUnique();
+
         builder.Property(user => user.PreferredCurrency)
             .HasMaxLength(3)
             .HasColumnName("preferred_currency")

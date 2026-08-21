@@ -1,3 +1,4 @@
+using FinanceOS.BuildingBlocks.Security;
 using FinanceOS.Finance.Application.Common;
 using FinanceOS.Finance.Application.Features.Accounts.CreateAccount;
 using FinanceOS.Finance.Application.Features.Accounts.GetAccounts;
@@ -11,9 +12,15 @@ namespace FinanceOS.Finance.Api.Endpoints;
 
 internal static class FinanceEndpoints
 {
-    public static IEndpointRouteBuilder MapFinanceEndpoints(this IEndpointRouteBuilder endpoints)
+    public static IEndpointRouteBuilder MapFinanceEndpoints(
+        this IEndpointRouteBuilder endpoints,
+        IConfiguration configuration,
+        IWebHostEnvironment environment)
     {
-        var group = endpoints.MapGroup("/api/v1/finance").WithTags("Finance");
+        var group = endpoints
+            .MapGroup("/api/v1/finance")
+            .WithTags("Finance")
+            .RequireFinanceOSAuthorization(configuration, environment);
 
         group.MapPost("/accounts", CreateAccountAsync).WithName("CreateAccount");
         group.MapGet("/accounts", GetAccountsAsync).WithName("GetAccounts");

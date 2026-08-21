@@ -31,6 +31,18 @@ spec:
                   key: finance-database
             - name: Budget__ApplyMigrationsOnStartup
               value: "true"
+            - name: Authentication__Jwt__RequireAuthorization
+              value: "true"
+            - name: Authentication__Jwt__Authority
+              valueFrom:
+                configMapKeyRef:
+                  name: financeos-auth-config
+                  key: jwt-authority
+            - name: Authentication__Jwt__Audience
+              valueFrom:
+                configMapKeyRef:
+                  name: financeos-auth-config
+                  key: jwt-audience
             - name: RabbitMQ__Host
               valueFrom:
                 secretKeyRef:

@@ -6,6 +6,7 @@ using FinanceOS.Identity.Application.Features.Households.CreateHousehold;
 using FinanceOS.Identity.Application.Features.Households.GetCurrentHousehold;
 using FinanceOS.Identity.Application.Features.Households.GetHousehold;
 using FinanceOS.Identity.Application.Features.Households.RemoveHouseholdMember;
+using FinanceOS.Identity.Application.Features.Users.BootstrapCurrentIdentity;
 using FinanceOS.Identity.Application.Features.Users.CreateUser;
 using FinanceOS.Identity.Application.Features.Users.GetUser;
 using FinanceOS.Identity.Application.Features.Users.UpdateUserProfile;
@@ -104,6 +105,31 @@ public sealed class IdentityApplicationTests
 
         Assert.Equal(household.Id.Value, result.HouseholdId);
         Assert.Single(result.Members);
+    }
+
+    [Fact]
+    public async Task BootstrapCurrentIdentityCreatesUserAndHouseholdForNewExternalSubject()
+    {
+        var users = new InMemoryUserRepository();
+        var households = new InMemoryHouseholdRepository();
+        var handler = new BootstrapCurrentIdentityHandler(users, households, new InMemoryUnitOfWork());
+
+        var result = await handler.HandleAsync(
+            new BootstrapCurrentIdentityCommand(
+                "external-subject-1",
+                "user@example.com",
+                "Ait Tghrayt",
+                "EUR",
+                "fr",
+                "Europe/Paris"),
+            CancellationToken.None);
+
+        Assert.Equal("user@example.com", result.User.Email);
+        Assert.Equal("Ait", result.User.FirstName);
+        Assert.Equal("Tghrayt", result.User.LastName);
+        Assert.Equal(result.User.UserId, result.Household.OwnerUserId);
+        Assert.Contains(result.Household.Members, membership =>
+            membership.UserId == result.User.UserId && membership.Role == "Owner");
     }
 
     [Fact]
@@ -271,6 +297,16 @@ public sealed class IdentityApplicationTests
         public Task<User?> GetByIdAsync(UserId id, CancellationToken cancellationToken)
         {
             return Task.FromResult(_users.FirstOrDefault(user => user.Id == id));
+        }
+
+        public Task<User?> GetByExternalSubjectAsync(string externalSubject, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(_users.FirstOrDefault(user => user.ExternalSubject == externalSubject));
+        }
+
+        public Task<User?> GetByEmailAsync(EmailAddress email, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(_users.FirstOrDefault(user => user.Email == email));
         }
 
         public Task<bool> ExistsByEmailAsync(EmailAddress email, CancellationToken cancellationToken)

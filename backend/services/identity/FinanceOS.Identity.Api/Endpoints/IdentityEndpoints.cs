@@ -5,6 +5,7 @@ using FinanceOS.Identity.Application.Features.Households.CreateHousehold;
 using FinanceOS.Identity.Application.Features.Households.GetCurrentHousehold;
 using FinanceOS.Identity.Application.Features.Households.GetHousehold;
 using FinanceOS.Identity.Application.Features.Households.RemoveHouseholdMember;
+using FinanceOS.Identity.Application.Features.Users.BootstrapCurrentIdentity;
 using FinanceOS.Identity.Application.Features.Users.CreateUser;
 using FinanceOS.Identity.Application.Features.Users.GetUser;
 using FinanceOS.Identity.Application.Features.Users.UpdateUserProfile;
@@ -40,6 +41,9 @@ internal static class IdentityEndpoints
 
         protectedGroup.MapGet("/users/me", GetMeAsync)
             .WithName("GetCurrentIdentityUser");
+
+        protectedGroup.MapPost("/me/bootstrap", BootstrapCurrentIdentityAsync)
+            .WithName("BootstrapCurrentIdentity");
 
         protectedGroup.MapPut("/users/{userId:guid}/profile", UpdateUserProfileAsync)
             .WithName("UpdateIdentityUserProfile");
@@ -109,14 +113,14 @@ internal static class IdentityEndpoints
 
     private static async Task<IResult> GetMeAsync(
         ClaimsPrincipal principal,
-        GetUserHandler handler,
+        BootstrapCurrentIdentityHandler handler,
         CancellationToken cancellationToken)
     {
         return await ExecuteAsync(async () =>
         {
-            var result = await handler.HandleAsync(GetRequiredUserId(principal), cancellationToken);
+            var result = await handler.HandleAsync(CreateBootstrapCommand(principal), cancellationToken);
 
-            return Results.Ok(result);
+            return Results.Ok(result.User);
         });
     }
 
@@ -171,13 +175,26 @@ internal static class IdentityEndpoints
     }
 
     private static async Task<IResult> GetCurrentHouseholdAsync(
-        Guid userId,
-        GetCurrentHouseholdHandler handler,
+        ClaimsPrincipal principal,
+        BootstrapCurrentIdentityHandler handler,
         CancellationToken cancellationToken)
     {
         return await ExecuteAsync(async () =>
         {
-            var result = await handler.HandleAsync(userId, cancellationToken);
+            var result = await handler.HandleAsync(CreateBootstrapCommand(principal), cancellationToken);
+
+            return Results.Ok(result.Household);
+        });
+    }
+
+    private static async Task<IResult> BootstrapCurrentIdentityAsync(
+        ClaimsPrincipal principal,
+        BootstrapCurrentIdentityHandler handler,
+        CancellationToken cancellationToken)
+    {
+        return await ExecuteAsync(async () =>
+        {
+            var result = await handler.HandleAsync(CreateBootstrapCommand(principal), cancellationToken);
 
             return Results.Ok(result);
         });
@@ -289,6 +306,62 @@ internal static class IdentityEndpoints
         }
 
         return userId;
+    }
+
+    private static BootstrapCurrentIdentityCommand CreateBootstrapCommand(ClaimsPrincipal principal)
+    {
+        return new BootstrapCurrentIdentityCommand(
+            GetRequiredExternalSubject(principal),
+            GetRequiredEmail(principal),
+            GetDisplayName(principal),
+            "EUR",
+            "fr",
+            "Europe/Paris");
+    }
+
+    private static string GetRequiredExternalSubject(ClaimsPrincipal principal)
+    {
+        var value = principal.FindFirstValue("oid")
+            ?? principal.FindFirstValue("sub")
+            ?? principal.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new IdentityValidationException("Authenticated external subject claim is missing.");
+        }
+
+        return value;
+    }
+
+    private static string GetRequiredEmail(ClaimsPrincipal principal)
+    {
+        var value = principal.FindFirstValue("emails")
+            ?? principal.FindFirstValue("email")
+            ?? principal.FindFirstValue("preferred_username")
+            ?? principal.FindFirstValue("upn")
+            ?? principal.FindFirstValue(ClaimTypes.Email);
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new IdentityValidationException("Authenticated email claim is missing.");
+        }
+
+        return value;
+    }
+
+    private static string GetDisplayName(ClaimsPrincipal principal)
+    {
+        var displayName = principal.FindFirstValue("name");
+        if (!string.IsNullOrWhiteSpace(displayName))
+        {
+            return displayName;
+        }
+
+        var givenName = principal.FindFirstValue(ClaimTypes.GivenName) ?? principal.FindFirstValue("given_name");
+        var familyName = principal.FindFirstValue(ClaimTypes.Surname) ?? principal.FindFirstValue("family_name");
+        var fullName = $"{givenName} {familyName}".Trim();
+
+        return string.IsNullOrWhiteSpace(fullName) ? GetRequiredEmail(principal) : fullName;
     }
 
     private static Guid ResolveActorUserId(ClaimsPrincipal principal, Guid? fallbackUserId)

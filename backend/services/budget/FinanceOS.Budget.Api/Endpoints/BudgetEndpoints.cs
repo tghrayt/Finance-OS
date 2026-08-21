@@ -1,3 +1,4 @@
+using FinanceOS.BuildingBlocks.Security;
 using FinanceOS.Budget.Application.Common;
 using FinanceOS.Budget.Application.Features.MonthlyBudgets.CreateMonthlyBudget;
 using FinanceOS.Budget.Application.Features.MonthlyBudgets.GetMonthlyBudget;
@@ -8,9 +9,15 @@ namespace FinanceOS.Budget.Api.Endpoints;
 
 internal static class BudgetEndpoints
 {
-    public static IEndpointRouteBuilder MapBudgetEndpoints(this IEndpointRouteBuilder endpoints)
+    public static IEndpointRouteBuilder MapBudgetEndpoints(
+        this IEndpointRouteBuilder endpoints,
+        IConfiguration configuration,
+        IWebHostEnvironment environment)
     {
-        var group = endpoints.MapGroup("/api/v1/budget").WithTags("Budget");
+        var group = endpoints
+            .MapGroup("/api/v1/budget")
+            .WithTags("Budget")
+            .RequireFinanceOSAuthorization(configuration, environment);
 
         group.MapPost("/monthly-budgets", CreateMonthlyBudgetAsync).WithName("CreateMonthlyBudget");
         group.MapGet("/monthly-budgets/current", GetMonthlyBudgetAsync).WithName("GetMonthlyBudget");

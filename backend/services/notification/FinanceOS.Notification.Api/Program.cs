@@ -1,4 +1,5 @@
 using FinanceOS.BuildingBlocks.Observability;
+using FinanceOS.BuildingBlocks.Security;
 using FinanceOS.Notification.Api.Endpoints;
 using FinanceOS.Notification.Application.Features.InApp.GetNotifications;
 using FinanceOS.Notification.Application.Features.InApp.MarkNotificationRead;
@@ -11,6 +12,7 @@ var builder = WebApplication.CreateBuilder(args)
     .AddFinanceOSFoundation("FinanceOS.Notification.Api");
 
 builder.Services.AddNotificationInfrastructure(builder.Configuration);
+builder.Services.AddFinanceOSJwtSecurity(builder.Configuration, builder.Environment);
 builder.Services.AddScoped<GetNotificationsHandler>();
 builder.Services.AddScoped<MarkNotificationReadHandler>();
 builder.Services
@@ -33,7 +35,10 @@ app.MapGet("/", () => Results.Ok(new
     status = "Running"
 }));
 
-app.MapNotificationEndpoints();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapNotificationEndpoints(app.Configuration, app.Environment);
 app.MapFinanceOSHealthChecks();
 
 app.Run();

@@ -7,6 +7,7 @@ using FinanceOS.Identity.Application.Features.Households.CreateHousehold;
 using FinanceOS.Identity.Application.Features.Households.GetCurrentHousehold;
 using FinanceOS.Identity.Application.Features.Households.GetHousehold;
 using FinanceOS.Identity.Application.Features.Households.RemoveHouseholdMember;
+using FinanceOS.Identity.Application.Features.Users.BootstrapCurrentIdentity;
 using FinanceOS.Identity.Application.Features.Users.CreateUser;
 using FinanceOS.Identity.Application.Features.Users.GetUser;
 using FinanceOS.Identity.Application.Features.Users.UpdateUserProfile;
@@ -20,6 +21,7 @@ var builder = WebApplication.CreateBuilder(args)
 
 builder.Services.AddIdentityInfrastructure(builder.Configuration);
 builder.Services.AddIdentityApiSecurity(builder.Configuration, builder.Environment);
+builder.Services.AddScoped<BootstrapCurrentIdentityHandler>();
 builder.Services.AddScoped<CreateUserHandler>();
 builder.Services.AddScoped<GetUserHandler>();
 builder.Services.AddScoped<UpdateUserProfileHandler>();

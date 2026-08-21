@@ -18,6 +18,15 @@ export interface AuthSession {
   accessToken: string | null;
 }
 
+interface BootstrapCurrentIdentityResponse {
+  user: {
+    email: string;
+  };
+  household: {
+    householdId: string;
+  };
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthSessionService {
   private readonly http = inject(HttpClient);
@@ -35,6 +44,12 @@ export class AuthSessionService {
   readonly session = this.currentSession.asReadonly();
 
   readonly householdId = signal(this.currentSession()?.householdId ?? DEMO_HOUSEHOLD_ID);
+
+  hasResolvedHousehold(): boolean {
+    const session = this.currentSession();
+
+    return session?.mode === 'demo' || this.householdId() !== DEMO_HOUSEHOLD_ID;
+  }
 
   initializeHostedAuth(): Promise<void> {
     this.hostedAuthInitialization ??= this.loadHostedAuth();
@@ -128,7 +143,7 @@ export class AuthSessionService {
     this.hostedAuthClient = new PublicClientApplication(this.buildMsalConfiguration(this.hostedAuthConfig));
     await this.hostedAuthClient.initialize();
     const redirectResult = await this.hostedAuthClient.handleRedirectPromise();
-    this.captureAuthenticatedSession(redirectResult);
+    await this.captureAuthenticatedSession(redirectResult);
 
     this.hostedAuthStatus.set({
       enabled: true,
@@ -137,19 +152,52 @@ export class AuthSessionService {
     });
   }
 
-  private captureAuthenticatedSession(result: AuthenticationResult | null): void {
+  private async captureAuthenticatedSession(result: AuthenticationResult | null): Promise<void> {
     const account = result?.account ?? this.hostedAuthClient?.getAllAccounts()[0] ?? null;
-    if (!account) {
+    if (!account || !this.hostedAuthClient || !this.hostedAuthConfig?.enabled) {
       return;
     }
 
-    this.hostedAuthClient?.setActiveAccount(account);
+    this.hostedAuthClient.setActiveAccount(account);
+    const accessToken = result?.accessToken || (await this.acquireAccessToken()).accessToken;
+    if (!accessToken) {
+      return;
+    }
+
+    const identity = await this.bootstrapCurrentIdentity(accessToken);
+
     this.setSession({
       mode: 'authenticated',
-      email: account.username,
-      householdId: DEMO_HOUSEHOLD_ID,
-      accessToken: result?.accessToken ?? null,
+      email: identity.user.email || account.username,
+      householdId: identity.household.householdId,
+      accessToken,
     });
+  }
+
+  private async acquireAccessToken(): Promise<AuthenticationResult> {
+    const account = this.hostedAuthClient?.getActiveAccount() ?? this.hostedAuthClient?.getAllAccounts()[0];
+    if (!this.hostedAuthClient || !this.hostedAuthConfig || !account) {
+      throw new Error('Hosted authentication account is missing.');
+    }
+
+    return await this.hostedAuthClient.acquireTokenSilent({
+      account,
+      scopes: this.hostedAuthConfig.scopes,
+    });
+  }
+
+  private async bootstrapCurrentIdentity(accessToken: string): Promise<BootstrapCurrentIdentityResponse> {
+    return await firstValueFrom(
+      this.http.post<BootstrapCurrentIdentityResponse>(
+        '/api/v1/identity/me/bootstrap',
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      ),
+    );
   }
 
   private normalizeHostedAuthConfig(config: Partial<HostedAuthConfig>): HostedAuthConfig {

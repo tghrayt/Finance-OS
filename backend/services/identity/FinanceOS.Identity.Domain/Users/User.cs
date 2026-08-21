@@ -9,6 +9,7 @@ public sealed class User
         Email = EmailAddress.Create("unknown@example.com");
         FirstName = string.Empty;
         LastName = string.Empty;
+        ExternalSubject = string.Empty;
         PreferredCurrency = "EUR";
         Language = "en";
         TimeZone = "UTC";
@@ -19,6 +20,7 @@ public sealed class User
         string firstName,
         string lastName,
         EmailAddress email,
+        string externalSubject,
         string preferredCurrency,
         string language,
         string timeZone,
@@ -28,6 +30,7 @@ public sealed class User
         FirstName = firstName;
         LastName = lastName;
         Email = email;
+        ExternalSubject = externalSubject;
         PreferredCurrency = preferredCurrency;
         Language = language;
         TimeZone = timeZone;
@@ -41,6 +44,8 @@ public sealed class User
     public string LastName { get; private set; }
 
     public EmailAddress Email { get; }
+
+    public string ExternalSubject { get; private set; }
 
     public string PreferredCurrency { get; private set; }
 
@@ -64,10 +69,46 @@ public sealed class User
             RequiredText(firstName, nameof(firstName)),
             RequiredText(lastName, nameof(lastName)),
             EmailAddress.Create(email),
+            string.Empty,
             CurrencyCode.Create(preferredCurrency).Value,
             RequiredText(language, nameof(language)).ToLowerInvariant(),
             RequiredText(timeZone, nameof(timeZone)),
             createdAt ?? SystemClock.UtcNow);
+    }
+
+    public static User RegisterExternal(
+        string displayName,
+        string email,
+        string externalSubject,
+        string preferredCurrency = "EUR",
+        string language = "fr",
+        string timeZone = "Europe/Paris",
+        DateTimeOffset? createdAt = null)
+    {
+        var nameParts = RequiredText(displayName, nameof(displayName)).Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+        var firstName = nameParts.ElementAtOrDefault(0) ?? "FinanceOS";
+        var lastName = nameParts.ElementAtOrDefault(1) ?? "User";
+
+        return new User(
+            UserId.New(),
+            firstName,
+            lastName,
+            EmailAddress.Create(email),
+            RequiredText(externalSubject, nameof(externalSubject)),
+            CurrencyCode.Create(preferredCurrency).Value,
+            RequiredText(language, nameof(language)).ToLowerInvariant(),
+            RequiredText(timeZone, nameof(timeZone)),
+            createdAt ?? SystemClock.UtcNow);
+    }
+
+    public void LinkExternalSubject(string externalSubject)
+    {
+        if (!string.IsNullOrWhiteSpace(ExternalSubject))
+        {
+            return;
+        }
+
+        ExternalSubject = RequiredText(externalSubject, nameof(externalSubject));
     }
 
     public void UpdateProfile(string firstName, string lastName, string preferredCurrency, string language, string timeZone)

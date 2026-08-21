@@ -1,3 +1,4 @@
+using FinanceOS.BuildingBlocks.Security;
 using FinanceOS.Notification.Application.Common;
 using FinanceOS.Notification.Application.Features.InApp.GetNotifications;
 using FinanceOS.Notification.Application.Features.InApp.MarkNotificationRead;
@@ -7,9 +8,15 @@ namespace FinanceOS.Notification.Api.Endpoints;
 
 internal static class NotificationEndpoints
 {
-    public static IEndpointRouteBuilder MapNotificationEndpoints(this IEndpointRouteBuilder endpoints)
+    public static IEndpointRouteBuilder MapNotificationEndpoints(
+        this IEndpointRouteBuilder endpoints,
+        IConfiguration configuration,
+        IWebHostEnvironment environment)
     {
-        var group = endpoints.MapGroup("/api/v1/notification").WithTags("Notification");
+        var group = endpoints
+            .MapGroup("/api/v1/notification")
+            .WithTags("Notification")
+            .RequireFinanceOSAuthorization(configuration, environment);
 
         group.MapGet("/in-app", GetInAppNotificationsAsync).WithName("GetInAppNotifications");
         group.MapPut("/in-app/{notificationId:guid}/read", MarkInAppNotificationReadAsync).WithName("MarkInAppNotificationRead");

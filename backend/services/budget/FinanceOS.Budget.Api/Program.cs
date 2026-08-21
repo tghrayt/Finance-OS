@@ -5,6 +5,7 @@ using FinanceOS.Budget.Application.Features.MonthlyBudgets.SetBudgetAllocation;
 using FinanceOS.Budget.Infrastructure;
 using FinanceOS.Budget.Infrastructure.Persistence;
 using FinanceOS.BuildingBlocks.Observability;
+using FinanceOS.BuildingBlocks.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
@@ -12,6 +13,7 @@ var builder = WebApplication.CreateBuilder(args)
     .AddFinanceOSFoundation("FinanceOS.Budget.Api");
 
 builder.Services.AddBudgetInfrastructure(builder.Configuration);
+builder.Services.AddFinanceOSJwtSecurity(builder.Configuration, builder.Environment);
 builder.Services.AddScoped<CreateMonthlyBudgetHandler>();
 builder.Services.AddScoped<GetMonthlyBudgetHandler>();
 builder.Services.AddScoped<SetBudgetAllocationHandler>();
@@ -35,7 +37,10 @@ app.MapGet("/", () => Results.Ok(new
     status = "Running"
 }));
 
-app.MapBudgetEndpoints();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapBudgetEndpoints(app.Configuration, app.Environment);
 app.MapFinanceOSHealthChecks();
 
 app.Run();

@@ -88,7 +88,7 @@ export class DashboardShellComponent {
       shareReplay({ bufferSize: 1, refCount: true }),
     );
 
-    if (this.authSession.session()) {
+    if (this.authSession.session() && this.authSession.hasResolvedHousehold()) {
       this.authReady.set(true);
       this.refreshDashboard$.next();
     } else {
