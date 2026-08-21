@@ -3,10 +3,10 @@
     <section class="access-screen" aria-labelledby="access-title">
       <div class="access-panel">
         <p class="eyebrow">FinanceOS</p>
-        <h1 id="access-title">Choisissez votre acces</h1>
+        <h1 id="access-title">Connexion securisee</h1>
         <p class="access-lead">
-          FinanceOS utilisera Microsoft Entra External ID pour verifier l'email,
-          proteger les comptes et relier Google, Microsoft ou email au meme profil financier.
+          FinanceOS utilise Microsoft Entra External ID pour creer le compte,
+          verifier l'email et proteger l'acces par mot de passe.
         </p>
 
         <div class="auth-status" [class.ready]="hostedAuthStatus().ready">
@@ -16,7 +16,7 @@
           <span>{{ hostedAuthStatus().message }}</span>
         </div>
 
-        <div class="auth-provider-grid" aria-label="Methodes de connexion">
+        <div class="auth-provider-grid single-provider" aria-label="Methode de connexion">
           @for (provider of authProviders; track provider.kind) {
             <button type="button" class="auth-provider-card" (click)="continueWithProvider(provider.kind)">
               <span class="material-icons" aria-hidden="true">{{ provider.icon }}</span>

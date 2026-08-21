@@ -80,6 +80,10 @@
   margin-bottom: 1.25rem;
 }
 
+.auth-provider-grid.single-provider {
+  grid-template-columns: minmax(0, 28rem);
+}
+
 .auth-provider-card {
   align-items: flex-start;
   background: rgba(244, 241, 232, 0.07);
