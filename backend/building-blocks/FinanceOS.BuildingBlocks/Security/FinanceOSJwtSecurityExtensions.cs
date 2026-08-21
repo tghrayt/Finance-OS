@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.IdentityModel.Tokens;
 
 namespace FinanceOS.BuildingBlocks.Security;
 
@@ -29,8 +30,16 @@ public static class FinanceOSJwtSecurityExtensions
                     options.Authority = jwtAuthority;
                 }
 
+                options.MapInboundClaims = false;
                 options.Audience = jwtAudience;
                 options.RequireHttpsMetadata = !environment.IsDevelopment();
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidAudiences = BuildValidAudiences(jwtAudience),
+                    ValidIssuers = BuildValidIssuers(jwtAuthority),
+                    NameClaimType = "name",
+                    RoleClaimType = "roles"
+                };
             });
 
         services.AddAuthorization(options =>
@@ -40,6 +49,45 @@ public static class FinanceOSJwtSecurityExtensions
         });
 
         return services;
+    }
+
+    private static IReadOnlyCollection<string> BuildValidAudiences(string? configuredAudience)
+    {
+        if (string.IsNullOrWhiteSpace(configuredAudience))
+        {
+            return [];
+        }
+
+        var audiences = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            configuredAudience
+        };
+
+        const string appIdUriPrefix = "api://";
+        if (configuredAudience.StartsWith(appIdUriPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            audiences.Add(configuredAudience[appIdUriPrefix.Length..]);
+        }
+        else
+        {
+            audiences.Add($"{appIdUriPrefix}{configuredAudience}");
+        }
+
+        return audiences;
+    }
+
+    private static IReadOnlyCollection<string> BuildValidIssuers(string? configuredAuthority)
+    {
+        if (string.IsNullOrWhiteSpace(configuredAuthority))
+        {
+            return [];
+        }
+
+        return
+        [
+            configuredAuthority.TrimEnd('/'),
+            $"{configuredAuthority.TrimEnd('/')}/"
+        ];
     }
 
     public static RouteGroupBuilder RequireFinanceOSAuthorization(
