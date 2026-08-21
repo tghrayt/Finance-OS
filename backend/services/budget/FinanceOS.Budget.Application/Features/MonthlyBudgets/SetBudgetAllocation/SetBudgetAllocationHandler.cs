@@ -2,6 +2,7 @@ using FinanceOS.Budget.Application.Abstractions;
 using FinanceOS.Budget.Application.Common;
 using FinanceOS.Budget.Application.Features.MonthlyBudgets;
 using FinanceOS.Budget.Domain.Budgets;
+using FinanceOS.Budget.Domain.Common;
 
 namespace FinanceOS.Budget.Application.Features.MonthlyBudgets.SetBudgetAllocation;
 
@@ -11,6 +12,11 @@ public sealed class SetBudgetAllocationHandler(IMonthlyBudgetRepository budgets,
     {
         var budget = await budgets.GetByIdAsync(new MonthlyBudgetId(command.BudgetId), cancellationToken)
             ?? throw new BudgetNotFoundException("Budget was not found.");
+
+        if (budget.HouseholdId != new HouseholdId(command.HouseholdId))
+        {
+            throw new BudgetNotFoundException("Budget was not found.");
+        }
 
         budget.AddOrReplaceAllocation(command.CategoryId, command.PlannedAmount);
         await unitOfWork.SaveChangesAsync(cancellationToken);

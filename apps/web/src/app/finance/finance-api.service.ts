@@ -2,6 +2,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { forkJoin, Observable } from 'rxjs';
 
+import { AuthSessionService } from '../core/auth/auth-session.service';
+
 const FINANCE_API_BASE_URL = '/api/v1/finance';
 
 export interface FinanceAccount {
@@ -73,9 +75,12 @@ export interface CreateCategoryRequest {
 
 @Injectable({ providedIn: 'root' })
 export class FinanceApiService {
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly http: HttpClient,
+    private readonly authSession: AuthSessionService,
+  ) {}
 
-  getSnapshot(householdId: string): Observable<FinanceSnapshot> {
+  getSnapshot(householdId = this.authSession.householdId()): Observable<FinanceSnapshot> {
     const householdParams = new HttpParams().set('householdId', householdId);
 
     return forkJoin({
@@ -87,15 +92,37 @@ export class FinanceApiService {
     });
   }
 
-  createAccount(request: CreateAccountRequest): Observable<FinanceAccount> {
-    return this.http.post<FinanceAccount>(`${FINANCE_API_BASE_URL}/accounts`, request);
+  createAccount(request: Omit<CreateAccountRequest, 'householdId'>): Observable<FinanceAccount> {
+    return this.http.post<FinanceAccount>(
+      `${FINANCE_API_BASE_URL}/accounts`,
+      this.withHousehold<CreateAccountRequest>(request),
+    );
   }
 
-  createTransaction(request: CreateTransactionRequest): Observable<FinanceTransaction> {
-    return this.http.post<FinanceTransaction>(`${FINANCE_API_BASE_URL}/transactions`, request);
+  createTransaction(request: Omit<CreateTransactionRequest, 'householdId'>): Observable<FinanceTransaction> {
+    return this.http.post<FinanceTransaction>(
+      `${FINANCE_API_BASE_URL}/transactions`,
+      this.withHousehold<CreateTransactionRequest>(request),
+    );
   }
 
-  createCategory(request: CreateCategoryRequest): Observable<FinanceCategory> {
-    return this.http.post<FinanceCategory>(`${FINANCE_API_BASE_URL}/categories`, request);
+  createCategory(request: Omit<CreateCategoryRequest, 'householdId'>): Observable<FinanceCategory> {
+    return this.http.post<FinanceCategory>(
+      `${FINANCE_API_BASE_URL}/categories`,
+      this.withHousehold<CreateCategoryRequest>(request),
+    );
+  }
+
+  archiveAccount(accountId: string, householdId = this.authSession.householdId()): Observable<FinanceAccount> {
+    const params = new HttpParams().set('householdId', householdId);
+
+    return this.http.delete<FinanceAccount>(`${FINANCE_API_BASE_URL}/accounts/${accountId}`, { params });
+  }
+
+  private withHousehold<T extends { householdId: string }>(request: Omit<T, 'householdId'>): T {
+    return {
+      ...request,
+      householdId: this.authSession.householdId(),
+    } as T;
   }
 }

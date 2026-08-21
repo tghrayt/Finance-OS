@@ -43,6 +43,8 @@ spec:
                 configMapKeyRef:
                   name: financeos-auth-config
                   key: jwt-audience
+            - name: Identity__BaseUrl
+              value: http://financeos-identity-api/
             - name: RabbitMQ__Host
               valueFrom:
                 secretKeyRef:

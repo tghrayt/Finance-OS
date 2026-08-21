@@ -1,5 +1,6 @@
 using FinanceOS.BuildingBlocks.Security;
 using FinanceOS.Finance.Application.Common;
+using FinanceOS.Finance.Application.Features.Accounts.ArchiveAccount;
 using FinanceOS.Finance.Application.Features.Accounts.CreateAccount;
 using FinanceOS.Finance.Application.Features.Accounts.GetAccounts;
 using FinanceOS.Finance.Application.Features.Categories.CreateCategory;
@@ -24,6 +25,7 @@ internal static class FinanceEndpoints
 
         group.MapPost("/accounts", CreateAccountAsync).WithName("CreateAccount");
         group.MapGet("/accounts", GetAccountsAsync).WithName("GetAccounts");
+        group.MapDelete("/accounts/{accountId:guid}", ArchiveAccountAsync).WithName("ArchiveAccount");
         group.MapPost("/categories", CreateCategoryAsync).WithName("CreateCategory");
         group.MapGet("/categories", GetCategoriesAsync).WithName("GetCategories");
         group.MapPost("/transactions", CreateTransactionAsync).WithName("CreateTransaction");
@@ -32,10 +34,20 @@ internal static class FinanceEndpoints
         return endpoints;
     }
 
-    private static async Task<IResult> CreateAccountAsync(CreateAccountRequest request, CreateAccountHandler handler, CancellationToken cancellationToken)
+    private static async Task<IResult> CreateAccountAsync(
+        CreateAccountRequest request,
+        HttpContext httpContext,
+        IHouseholdAccessVerifier householdAccess,
+        CreateAccountHandler handler,
+        CancellationToken cancellationToken)
     {
         return await ExecuteAsync(async () =>
         {
+            if (!await householdAccess.CanAccessHouseholdAsync(request.HouseholdId, httpContext, cancellationToken))
+            {
+                return Results.Forbid();
+            }
+
             var result = await handler.HandleAsync(
                 new CreateAccountCommand(request.HouseholdId, request.Name, request.Type, request.InitialBalance, request.Currency, request.InstitutionName),
                 cancellationToken);
@@ -44,25 +56,73 @@ internal static class FinanceEndpoints
         });
     }
 
-    private static async Task<IResult> GetAccountsAsync(Guid householdId, GetAccountsHandler handler, CancellationToken cancellationToken) =>
-        await ExecuteAsync(async () => Results.Ok(await handler.HandleAsync(householdId, cancellationToken)));
+    private static async Task<IResult> GetAccountsAsync(
+        Guid householdId,
+        HttpContext httpContext,
+        IHouseholdAccessVerifier householdAccess,
+        GetAccountsHandler handler,
+        CancellationToken cancellationToken) =>
+        await ExecuteAsync(async () =>
+            await householdAccess.CanAccessHouseholdAsync(householdId, httpContext, cancellationToken)
+                ? Results.Ok(await handler.HandleAsync(householdId, cancellationToken))
+                : Results.Forbid());
 
-    private static async Task<IResult> CreateCategoryAsync(CreateCategoryRequest request, CreateCategoryHandler handler, CancellationToken cancellationToken)
+    private static async Task<IResult> ArchiveAccountAsync(
+        Guid accountId,
+        Guid householdId,
+        HttpContext httpContext,
+        IHouseholdAccessVerifier householdAccess,
+        ArchiveAccountHandler handler,
+        CancellationToken cancellationToken) =>
+        await ExecuteAsync(async () =>
+            await householdAccess.CanAccessHouseholdAsync(householdId, httpContext, cancellationToken)
+                ? Results.Ok(await handler.HandleAsync(new ArchiveAccountCommand(householdId, accountId), cancellationToken))
+                : Results.Forbid());
+
+    private static async Task<IResult> CreateCategoryAsync(
+        CreateCategoryRequest request,
+        HttpContext httpContext,
+        IHouseholdAccessVerifier householdAccess,
+        CreateCategoryHandler handler,
+        CancellationToken cancellationToken)
     {
         return await ExecuteAsync(async () =>
         {
+            if (!await householdAccess.CanAccessHouseholdAsync(request.HouseholdId, httpContext, cancellationToken))
+            {
+                return Results.Forbid();
+            }
+
             var result = await handler.HandleAsync(new CreateCategoryCommand(request.HouseholdId, request.Name, request.ParentCategoryId, request.Icon), cancellationToken);
             return Results.Created($"/api/v1/finance/categories/{result.CategoryId}", result);
         });
     }
 
-    private static async Task<IResult> GetCategoriesAsync(Guid householdId, GetCategoriesHandler handler, CancellationToken cancellationToken) =>
-        await ExecuteAsync(async () => Results.Ok(await handler.HandleAsync(householdId, cancellationToken)));
+    private static async Task<IResult> GetCategoriesAsync(
+        Guid householdId,
+        HttpContext httpContext,
+        IHouseholdAccessVerifier householdAccess,
+        GetCategoriesHandler handler,
+        CancellationToken cancellationToken) =>
+        await ExecuteAsync(async () =>
+            await householdAccess.CanAccessHouseholdAsync(householdId, httpContext, cancellationToken)
+                ? Results.Ok(await handler.HandleAsync(householdId, cancellationToken))
+                : Results.Forbid());
 
-    private static async Task<IResult> CreateTransactionAsync(CreateTransactionRequest request, HttpContext httpContext, CreateTransactionHandler handler, CancellationToken cancellationToken)
+    private static async Task<IResult> CreateTransactionAsync(
+        CreateTransactionRequest request,
+        HttpContext httpContext,
+        IHouseholdAccessVerifier householdAccess,
+        CreateTransactionHandler handler,
+        CancellationToken cancellationToken)
     {
         return await ExecuteAsync(async () =>
         {
+            if (!await householdAccess.CanAccessHouseholdAsync(request.HouseholdId, httpContext, cancellationToken))
+            {
+                return Results.Forbid();
+            }
+
             var result = await handler.HandleAsync(
                 new CreateTransactionCommand(
                     request.HouseholdId,
@@ -82,8 +142,18 @@ internal static class FinanceEndpoints
         });
     }
 
-    private static async Task<IResult> GetTransactionsAsync(Guid householdId, int page, int pageSize, GetTransactionsHandler handler, CancellationToken cancellationToken) =>
-        await ExecuteAsync(async () => Results.Ok(await handler.HandleAsync(householdId, page, pageSize, cancellationToken)));
+    private static async Task<IResult> GetTransactionsAsync(
+        Guid householdId,
+        int page,
+        int pageSize,
+        HttpContext httpContext,
+        IHouseholdAccessVerifier householdAccess,
+        GetTransactionsHandler handler,
+        CancellationToken cancellationToken) =>
+        await ExecuteAsync(async () =>
+            await householdAccess.CanAccessHouseholdAsync(householdId, httpContext, cancellationToken)
+                ? Results.Ok(await handler.HandleAsync(householdId, page, pageSize, cancellationToken))
+                : Results.Forbid());
 
     private static async Task<IResult> ExecuteAsync(Func<Task<IResult>> action)
     {

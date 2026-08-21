@@ -37,14 +37,27 @@ public sealed class BudgetApplicationTests
     public async Task SetBudgetAllocationAddsCategoryAllocation()
     {
         var budgets = new InMemoryMonthlyBudgetRepository();
+        var householdId = HouseholdId.New();
+        var budget = MonthlyBudget.Create(householdId, 2026, 8, 1500, "EUR", DateTimeOffset.UtcNow);
+        await budgets.AddAsync(budget, CancellationToken.None);
+        var handler = new SetBudgetAllocationHandler(budgets, new InMemoryBudgetUnitOfWork());
+
+        var result = await handler.HandleAsync(new SetBudgetAllocationCommand(householdId.Value, budget.Id.Value, Guid.NewGuid(), 300), CancellationToken.None);
+
+        Assert.Single(result.Allocations);
+        Assert.Equal(300, result.Allocations.Single().PlannedAmount);
+    }
+
+    [Fact]
+    public async Task SetBudgetAllocationRejectsBudgetFromAnotherHousehold()
+    {
+        var budgets = new InMemoryMonthlyBudgetRepository();
         var budget = MonthlyBudget.Create(HouseholdId.New(), 2026, 8, 1500, "EUR", DateTimeOffset.UtcNow);
         await budgets.AddAsync(budget, CancellationToken.None);
         var handler = new SetBudgetAllocationHandler(budgets, new InMemoryBudgetUnitOfWork());
 
-        var result = await handler.HandleAsync(new SetBudgetAllocationCommand(budget.Id.Value, Guid.NewGuid(), 300), CancellationToken.None);
-
-        Assert.Single(result.Allocations);
-        Assert.Equal(300, result.Allocations.Single().PlannedAmount);
+        await Assert.ThrowsAsync<BudgetNotFoundException>(() =>
+            handler.HandleAsync(new SetBudgetAllocationCommand(Guid.NewGuid(), budget.Id.Value, Guid.NewGuid(), 300), CancellationToken.None));
     }
 
     private sealed class InMemoryMonthlyBudgetRepository : IMonthlyBudgetRepository

@@ -9,6 +9,16 @@ describe('DashboardDataService', () => {
   let http: HttpTestingController;
 
   beforeEach(() => {
+    localStorage.setItem(
+      'financeos.auth.session',
+      JSON.stringify({
+        mode: 'demo',
+        email: 'demo@financeos.local',
+        householdId: 'household-1',
+        accessToken: null,
+      }),
+    );
+
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
@@ -19,11 +29,12 @@ describe('DashboardDataService', () => {
 
   afterEach(() => {
     http.verify();
+    localStorage.clear();
   });
 
   it('should compose loading and ready dashboard states', () => {
     const states: string[] = [];
-    service.load('household-1').subscribe((state) => states.push(state.status));
+    service.load().subscribe((state) => states.push(state.status));
 
     const now = new Date();
     http.expectOne('/api/v1/finance/accounts?householdId=household-1').flush([]);

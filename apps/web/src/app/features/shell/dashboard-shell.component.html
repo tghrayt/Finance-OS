@@ -143,7 +143,19 @@
                         <strong>{{ account.name }}</strong>
                         <span>{{ account.type }} · {{ account.currency }}</span>
                       </div>
-                      <b>{{ account.currentBalance | currency: account.currency : 'symbol' : '1.0-0' }}</b>
+                      <div class="account-row-actions">
+                        <b>{{ account.currentBalance | currency: account.currency : 'symbol' : '1.0-0' }}</b>
+                        <button
+                          type="button"
+                          class="icon-button ghost"
+                          title="Archiver le compte"
+                          aria-label="Archiver le compte"
+                          [disabled]="actionStatus === 'saving' || !account.isActive"
+                          (click)="archiveAccount(account)"
+                        >
+                          <span class="material-icons" aria-hidden="true">archive</span>
+                        </button>
+                      </div>
                     </div>
                   }
                 </div>
@@ -163,15 +175,24 @@
 
               @if (dashboard.status === 'loading') {
                 <div class="skeleton-chart" aria-label="Chargement des categories"></div>
-              } @else if (dashboard.categories.length === 0) {
+              } @else if (dashboard.categorySpending.length === 0) {
                 <div class="empty-state">
                   <span class="material-icons" aria-hidden="true">category</span>
-                  <p>Aucune categorie configuree.</p>
+                  <p>Aucune depense categorisee ce mois.</p>
                 </div>
               } @else {
-                <div class="category-cloud">
-                  @for (category of dashboard.categories; track trackCategory($index, category)) {
-                    <span>{{ category.icon }} {{ category.name }}</span>
+                <div class="spending-bars">
+                  @for (category of dashboard.categorySpending; track category.categoryId) {
+                    <div class="spending-bar-row">
+                      <div>
+                        <strong>{{ category.name }}</strong>
+                        <span>{{ category.amount | currency: category.currency : 'symbol' : '1.0-0' }}</span>
+                      </div>
+                      <div class="spending-bar" aria-label="Part de depense">
+                        <span [style.width.%]="category.ratio * 100"></span>
+                      </div>
+                      <b>{{ category.ratio | percent: '1.0-0' }}</b>
+                    </div>
                   }
                 </div>
               }

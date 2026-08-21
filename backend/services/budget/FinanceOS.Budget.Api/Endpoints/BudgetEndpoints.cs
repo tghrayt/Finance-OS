@@ -26,10 +26,20 @@ internal static class BudgetEndpoints
         return endpoints;
     }
 
-    private static async Task<IResult> CreateMonthlyBudgetAsync(CreateMonthlyBudgetRequest request, CreateMonthlyBudgetHandler handler, CancellationToken cancellationToken)
+    private static async Task<IResult> CreateMonthlyBudgetAsync(
+        CreateMonthlyBudgetRequest request,
+        HttpContext httpContext,
+        IHouseholdAccessVerifier householdAccess,
+        CreateMonthlyBudgetHandler handler,
+        CancellationToken cancellationToken)
     {
         return await ExecuteAsync(async () =>
         {
+            if (!await householdAccess.CanAccessHouseholdAsync(request.HouseholdId, httpContext, cancellationToken))
+            {
+                return Results.Forbid();
+            }
+
             var result = await handler.HandleAsync(
                 new CreateMonthlyBudgetCommand(request.HouseholdId, request.Year, request.Month, request.TotalBudget, request.Currency),
                 cancellationToken);
@@ -38,18 +48,33 @@ internal static class BudgetEndpoints
         });
     }
 
-    private static async Task<IResult> GetMonthlyBudgetAsync(Guid householdId, int year, int month, GetMonthlyBudgetHandler handler, CancellationToken cancellationToken) =>
-        await ExecuteAsync(async () => Results.Ok(await handler.HandleAsync(householdId, year, month, cancellationToken)));
+    private static async Task<IResult> GetMonthlyBudgetAsync(
+        Guid householdId,
+        int year,
+        int month,
+        HttpContext httpContext,
+        IHouseholdAccessVerifier householdAccess,
+        GetMonthlyBudgetHandler handler,
+        CancellationToken cancellationToken) =>
+        await ExecuteAsync(async () =>
+            await householdAccess.CanAccessHouseholdAsync(householdId, httpContext, cancellationToken)
+                ? Results.Ok(await handler.HandleAsync(householdId, year, month, cancellationToken))
+                : Results.Forbid());
 
     private static async Task<IResult> SetBudgetAllocationAsync(
         Guid budgetId,
         Guid categoryId,
+        Guid householdId,
         SetBudgetAllocationRequest request,
+        HttpContext httpContext,
+        IHouseholdAccessVerifier householdAccess,
         SetBudgetAllocationHandler handler,
         CancellationToken cancellationToken)
     {
         return await ExecuteAsync(async () =>
-            Results.Ok(await handler.HandleAsync(new SetBudgetAllocationCommand(budgetId, categoryId, request.PlannedAmount), cancellationToken)));
+            await householdAccess.CanAccessHouseholdAsync(householdId, httpContext, cancellationToken)
+                ? Results.Ok(await handler.HandleAsync(new SetBudgetAllocationCommand(householdId, budgetId, categoryId, request.PlannedAmount), cancellationToken))
+                : Results.Forbid());
     }
 
     private static async Task<IResult> ExecuteAsync(Func<Task<IResult>> action)

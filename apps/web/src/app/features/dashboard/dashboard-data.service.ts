@@ -5,7 +5,7 @@ import { catchError, forkJoin, map, Observable, of, startWith, throwError } from
 import { BudgetApiService, MonthlyBudget } from '../../budget/budget-api.service';
 import { FinanceApiService, FinanceSnapshot, FinanceTransaction } from '../../finance/finance-api.service';
 import { NotificationApiService } from '../../notification/notification-api.service';
-import { DashboardMetrics, DashboardState } from './dashboard.models';
+import { CategorySpendingInsight, DashboardMetrics, DashboardState } from './dashboard.models';
 
 @Injectable({ providedIn: 'root' })
 export class DashboardDataService {
@@ -15,16 +15,16 @@ export class DashboardDataService {
     private readonly notificationApi: NotificationApiService,
   ) {}
 
-  load(householdId: string): Observable<DashboardState> {
+  load(): Observable<DashboardState> {
     const now = new Date();
 
     return forkJoin({
-      finance: this.financeApi.getSnapshot(householdId),
+      finance: this.financeApi.getSnapshot(),
       budget: this.budgetApi
-        .getCurrentBudget(householdId, now.getFullYear(), now.getMonth() + 1)
+        .getCurrentBudget(now.getFullYear(), now.getMonth() + 1)
         .pipe(catchError((error: unknown) => (this.isNotFound(error) ? of(null) : throwError(() => error)))),
       notifications: this.notificationApi
-        .getInAppNotifications(householdId)
+        .getInAppNotifications()
         .pipe(catchError(() => of([]))),
     }).pipe(
       map(({ finance, budget, notifications }) => ({
@@ -33,6 +33,7 @@ export class DashboardDataService {
         budget,
         notifications,
         metrics: this.calculateMetrics(finance, budget),
+        categorySpending: this.calculateCategorySpending(finance),
       })),
       startWith(this.toLoadingState()),
       catchError(() =>
@@ -53,6 +54,7 @@ export class DashboardDataService {
       transactions: [],
       budget: null,
       notifications: [],
+      categorySpending: [],
       metrics: {
         totalBalance: 0,
         monthlyIncome: 0,
@@ -91,6 +93,34 @@ export class DashboardDataService {
     return transactions
       .filter((transaction) => transaction.type.toLowerCase() === type.toLowerCase())
       .reduce((total, transaction) => total + transaction.amount, 0);
+  }
+
+  private calculateCategorySpending(snapshot: FinanceSnapshot): CategorySpendingInsight[] {
+    const expenses = snapshot.transactions.filter((transaction) => transaction.type.toLowerCase() === 'expense');
+    const totalExpenses = expenses.reduce((total, transaction) => total + transaction.amount, 0);
+    const spending = new Map<string, CategorySpendingInsight>();
+
+    for (const transaction of expenses) {
+      const key = transaction.categoryId ?? 'uncategorized';
+      const category = snapshot.categories.find((item) => item.categoryId === transaction.categoryId);
+      const existing = spending.get(key);
+
+      spending.set(key, {
+        categoryId: transaction.categoryId,
+        name: category?.name ?? 'Non categorise',
+        amount: (existing?.amount ?? 0) + transaction.amount,
+        currency: transaction.currency,
+        ratio: 0,
+      });
+    }
+
+    return Array.from(spending.values())
+      .sort((left, right) => right.amount - left.amount)
+      .slice(0, 5)
+      .map((item) => ({
+        ...item,
+        ratio: totalExpenses > 0 ? item.amount / totalExpenses : 0,
+      }));
   }
 
   private isNotFound(error: unknown): boolean {

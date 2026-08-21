@@ -1,5 +1,6 @@
 using FinanceOS.BuildingBlocks.Observability;
 using FinanceOS.BuildingBlocks.Security;
+using FinanceOS.Finance.Application.Features.Accounts.ArchiveAccount;
 using FinanceOS.Finance.Api.Endpoints;
 using FinanceOS.Finance.Application.Features.Accounts.CreateAccount;
 using FinanceOS.Finance.Application.Features.Accounts.GetAccounts;
@@ -17,6 +18,7 @@ var builder = WebApplication.CreateBuilder(args)
 
 builder.Services.AddFinanceInfrastructure(builder.Configuration);
 builder.Services.AddFinanceOSJwtSecurity(builder.Configuration, builder.Environment);
+builder.Services.AddScoped<ArchiveAccountHandler>();
 builder.Services.AddScoped<CreateAccountHandler>();
 builder.Services.AddScoped<GetAccountsHandler>();
 builder.Services.AddScoped<CreateCategoryHandler>();

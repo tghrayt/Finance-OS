@@ -84,7 +84,7 @@ export class DashboardShellComponent {
       .subscribe((event) => this.syncActiveSection(event.urlAfterRedirects));
 
     this.dashboard$ = this.refreshDashboard$.pipe(
-      switchMap(() => this.dashboardData.load(this.householdId)),
+      switchMap(() => this.dashboardData.load()),
       shareReplay({ bufferSize: 1, refCount: true }),
     );
 
@@ -160,7 +160,6 @@ export class DashboardShellComponent {
 
     this.financeApi
       .createAccount({
-        householdId: this.householdId,
         name: value.name.trim(),
         type: value.type,
         initialBalance: Number(value.initialBalance),
@@ -191,6 +190,28 @@ export class DashboardShellComponent {
       });
   }
 
+  protected archiveAccount(account: FinanceAccount): void {
+    if (this.actionStatus === 'saving' || !account.isActive) {
+      return;
+    }
+
+    this.actionStatus = 'saving';
+    this.actionMessage = '';
+
+    this.financeApi
+      .archiveAccount(account.accountId)
+      .pipe(finalize(() => (this.actionStatus = 'idle')))
+      .subscribe({
+        next: () => {
+          this.actionMessage = `Compte "${account.name}" archive.`;
+          this.refreshDashboard$.next();
+        },
+        error: () => {
+          this.actionMessage = "Archivage du compte impossible pour le moment.";
+        },
+      });
+  }
+
   protected createTransaction(): void {
     if (this.transactionForm.invalid || this.actionStatus === 'saving') {
       this.transactionForm.markAllAsTouched();
@@ -203,7 +224,6 @@ export class DashboardShellComponent {
 
     this.financeApi
       .createTransaction({
-        householdId: this.householdId,
         accountId: value.accountId,
         destinationAccountId: null,
         type: value.type,
@@ -246,7 +266,6 @@ export class DashboardShellComponent {
 
     this.financeApi
       .createCategory({
-        householdId: this.householdId,
         name: value.name.trim(),
         parentCategoryId: null,
         icon: value.icon.trim(),
@@ -279,7 +298,6 @@ export class DashboardShellComponent {
 
     this.budgetApi
       .createMonthlyBudget({
-        householdId: this.householdId,
         year: now.getFullYear(),
         month: now.getMonth() + 1,
         totalBudget: Number(value.totalBudget),
@@ -332,7 +350,7 @@ export class DashboardShellComponent {
     this.actionMessage = '';
 
     this.notificationApi
-      .markAsRead(this.householdId, notification.notificationId)
+      .markAsRead(notification.notificationId)
       .pipe(finalize(() => (this.actionStatus = 'idle')))
       .subscribe({
         next: () => {

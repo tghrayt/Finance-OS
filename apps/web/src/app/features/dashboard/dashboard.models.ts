@@ -12,6 +12,14 @@ export interface DashboardMetrics {
   budgetConsumption: number;
 }
 
+export interface CategorySpendingInsight {
+  categoryId: string | null;
+  name: string;
+  amount: number;
+  currency: string;
+  ratio: number;
+}
+
 export interface DashboardState {
   status: 'loading' | 'ready' | 'error';
   accounts: FinanceAccount[];
@@ -20,5 +28,6 @@ export interface DashboardState {
   budget: MonthlyBudget | null;
   notifications: InAppNotification[];
   metrics: DashboardMetrics;
+  categorySpending: CategorySpendingInsight[];
   errorMessage?: string;
 }

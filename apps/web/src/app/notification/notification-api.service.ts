@@ -2,6 +2,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { AuthSessionService } from '../core/auth/auth-session.service';
+
 const NOTIFICATION_API_BASE_URL = '/api/v1/notification';
 
 export interface InAppNotification {
@@ -16,9 +18,12 @@ export interface InAppNotification {
 
 @Injectable({ providedIn: 'root' })
 export class NotificationApiService {
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly http: HttpClient,
+    private readonly authSession: AuthSessionService,
+  ) {}
 
-  getInAppNotifications(householdId: string, page = 1, pageSize = 6): Observable<InAppNotification[]> {
+  getInAppNotifications(page = 1, pageSize = 6, householdId = this.authSession.householdId()): Observable<InAppNotification[]> {
     const params = new HttpParams()
       .set('householdId', householdId)
       .set('page', page)
@@ -27,7 +32,7 @@ export class NotificationApiService {
     return this.http.get<InAppNotification[]>(`${NOTIFICATION_API_BASE_URL}/in-app`, { params });
   }
 
-  markAsRead(householdId: string, notificationId: string): Observable<InAppNotification> {
+  markAsRead(notificationId: string, householdId = this.authSession.householdId()): Observable<InAppNotification> {
     const params = new HttpParams().set('householdId', householdId);
     return this.http.put<InAppNotification>(`${NOTIFICATION_API_BASE_URL}/in-app/${notificationId}/read`, null, { params });
   }

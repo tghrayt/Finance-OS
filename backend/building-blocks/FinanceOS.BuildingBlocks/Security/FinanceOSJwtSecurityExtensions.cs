@@ -42,6 +42,9 @@ public static class FinanceOSJwtSecurityExtensions
                 };
             });
 
+        services.AddHttpClient("FinanceOS.Identity");
+        services.AddScoped<IHouseholdAccessVerifier, HouseholdAccessVerifier>();
+
         services.AddAuthorization(options =>
         {
             options.AddPolicy(AuthenticatedUserPolicy, policy =>
