@@ -25,22 +25,20 @@ describe('DashboardShellComponent', () => {
     http.verify();
   });
 
-  it('should create the app', () => {
+  it('should create the app', async () => {
     setDemoSession();
     const fixture = TestBed.createComponent(DashboardShellComponent);
     fixture.detectChanges();
-    flushAuthConfig();
     flushFinanceSnapshot();
 
     const app = fixture.componentInstance;
     expect(app).toBeTruthy();
   });
 
-  it('should render the finance dashboard title', () => {
+  it('should render the finance dashboard title', async () => {
     setDemoSession();
     const fixture = TestBed.createComponent(DashboardShellComponent);
     fixture.detectChanges();
-    flushAuthConfig();
     flushFinanceSnapshot();
     fixture.detectChanges();
 
@@ -48,16 +46,27 @@ describe('DashboardShellComponent', () => {
     expect(compiled.querySelector('h1')?.textContent).toContain('Pilotage financier personnel');
   });
 
-  it('should render an empty accounts state when the API returns no accounts', () => {
+  it('should render an empty accounts state when the API returns no accounts', async () => {
     setDemoSession();
     const fixture = TestBed.createComponent(DashboardShellComponent);
     fixture.detectChanges();
-    flushAuthConfig();
     flushFinanceSnapshot();
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('Aucun compte pour ce foyer.');
+  });
+
+  it('should keep dashboard content hidden while checking an anonymous session', () => {
+    const fixture = TestBed.createComponent(DashboardShellComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.session-gate')).toBeTruthy();
+    expect(compiled.textContent).not.toContain('Pilotage financier personnel');
+    expect(http.match((request) => request.url.startsWith('/api/v1/')).length).toBe(0);
+
+    flushAuthConfig();
   });
 
   function setDemoSession(): void {

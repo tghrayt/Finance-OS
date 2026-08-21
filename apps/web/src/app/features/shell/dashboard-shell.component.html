@@ -1,5 +1,9 @@
 <main class="finance-shell">
-  @if (dashboard$ | async; as dashboard) {
+  @if (!authReady()) {
+    <section class="session-gate" aria-label="Verification de session">
+      <span class="brand-emblem" aria-hidden="true">F</span>
+    </section>
+  } @else if (dashboard$ | async; as dashboard) {
     <div class="app-frame">
       <nav class="side-nav" aria-label="Navigation principale">
         <div class="brand-mark">
@@ -488,4 +492,3 @@
     </div>
   }
 </main>
-

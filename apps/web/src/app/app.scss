@@ -116,6 +116,13 @@
   min-height: 100vh;
 }
 
+.session-gate {
+  align-items: center;
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+}
+
 .side-nav {
   background: rgba(12, 15, 12, 0.88);
   border-right: 1px solid rgba(244, 241, 232, 0.1);

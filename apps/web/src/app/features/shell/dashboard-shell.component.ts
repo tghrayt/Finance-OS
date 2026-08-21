@@ -1,8 +1,8 @@
 import { AsyncPipe, CurrencyPipe, DatePipe, DecimalPipe, PercentPipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NavigationEnd, Router } from '@angular/router';
-import { filter, finalize, Observable, shareReplay, startWith, Subject, switchMap } from 'rxjs';
+import { filter, finalize, Observable, ReplaySubject, shareReplay, switchMap } from 'rxjs';
 
 import { BudgetApiService, MonthlyBudget } from '../../budget/budget-api.service';
 import { AuthSessionService } from '../../core/auth/auth-session.service';
@@ -31,6 +31,7 @@ export class DashboardShellComponent {
   protected readonly transactionTypes = ['Expense', 'Income'];
   protected activeSection: AppSection = 'dashboard';
   protected activeModal: CreationModal | null = null;
+  protected readonly authReady = signal(false);
   protected actionStatus: 'idle' | 'saving' = 'idle';
   protected actionMessage = '';
   private readonly financeApi = inject(FinanceApiService);
@@ -40,7 +41,7 @@ export class DashboardShellComponent {
   private readonly authSession = inject(AuthSessionService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
-  private readonly refreshDashboard$ = new Subject<void>();
+  private readonly refreshDashboard$ = new ReplaySubject<void>(1);
 
   protected readonly accountForm = this.formBuilder.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(120)]],
@@ -83,12 +84,16 @@ export class DashboardShellComponent {
       .subscribe((event) => this.syncActiveSection(event.urlAfterRedirects));
 
     this.dashboard$ = this.refreshDashboard$.pipe(
-      startWith(undefined),
       switchMap(() => this.dashboardData.load(this.householdId)),
       shareReplay({ bufferSize: 1, refCount: true }),
     );
 
-    void this.ensureAuthenticated();
+    if (this.authSession.session()) {
+      this.authReady.set(true);
+      this.refreshDashboard$.next();
+    } else {
+      void this.ensureAuthenticated();
+    }
   }
 
   protected trackAccount(_: number, account: FinanceAccount): string {
@@ -345,7 +350,11 @@ export class DashboardShellComponent {
 
     if (!this.authSession.session()) {
       await this.router.navigate(['/login']);
+      return;
     }
+
+    this.authReady.set(true);
+    this.refreshDashboard$.next();
   }
 
   private emptyToNull(value: string): string | null {
