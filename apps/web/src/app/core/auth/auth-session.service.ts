@@ -159,7 +159,7 @@ export class AuthSessionService {
     }
 
     this.hostedAuthClient.setActiveAccount(account);
-    const accessToken = result?.accessToken || (await this.acquireAccessToken()).accessToken;
+    const accessToken = (await this.acquireAccessToken()).accessToken;
     if (!accessToken) {
       return;
     }
@@ -182,7 +182,7 @@ export class AuthSessionService {
 
     return await this.hostedAuthClient.acquireTokenSilent({
       account,
-      scopes: this.hostedAuthConfig.scopes,
+      scopes: this.apiScopes(),
     });
   }
 
@@ -210,6 +210,12 @@ export class AuthSessionService {
       knownAuthorities: config.knownAuthorities ?? [],
       scopes: config.scopes?.length ? config.scopes : ['openid', 'profile', 'email'],
     };
+  }
+
+  private apiScopes(): string[] {
+    const scopes = this.hostedAuthConfig?.scopes.filter((scope) => scope.startsWith('api://')) ?? [];
+
+    return scopes.length ? scopes : this.hostedAuthConfig?.scopes ?? [];
   }
 
   private buildMsalConfiguration(config: HostedAuthConfig): Configuration {
