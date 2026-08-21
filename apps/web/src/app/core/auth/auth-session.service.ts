@@ -110,7 +110,7 @@ export class AuthSessionService {
       this.hostedAuthStatus.set({
         enabled: false,
         ready: false,
-        message: 'Microsoft Entra External ID sera active apres configuration.',
+        message: '',
       });
       return;
     }

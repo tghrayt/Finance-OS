@@ -1,0 +1,17 @@
+@use '../../app.scss';
+
+.login-page {
+  min-height: 100vh;
+}
+
+.login-brand {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.login-brand strong {
+  color: #ffffff;
+  font-size: 1.05rem;
+}

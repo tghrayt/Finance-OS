@@ -1,0 +1,32 @@
+<main class="finance-shell login-page">
+  <section class="access-screen" aria-labelledby="access-title">
+    <div class="access-panel">
+      <div class="login-brand" aria-label="FinanceOS">
+        <span class="brand-emblem" aria-hidden="true">F</span>
+        <strong>FinanceOS</strong>
+      </div>
+
+      <p class="eyebrow">Espace client</p>
+      <h1 id="access-title">Connexion securisee</h1>
+      <p class="access-lead">
+        Creez votre compte, verifiez votre email et accedez a votre espace financier protege par mot de passe.
+      </p>
+
+      <div class="auth-provider-grid single-provider" aria-label="Methode de connexion">
+        @for (provider of authProviders; track provider.kind) {
+          <button type="button" class="auth-provider-card" (click)="continueWithProvider(provider.kind)">
+            <span class="material-icons" aria-hidden="true">{{ provider.icon }}</span>
+            <span>
+              <strong>{{ provider.label }}</strong>
+              <small>{{ provider.description }}</small>
+            </span>
+            @if (provider.recommended) {
+              <b>Recommande</b>
+            }
+          </button>
+        }
+      </div>
+    </div>
+  </section>
+</main>
+

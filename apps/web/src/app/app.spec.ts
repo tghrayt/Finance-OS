@@ -3,17 +3,18 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 
-import { App } from './app';
 import { routes } from './app.routes';
+import { LoginPageComponent } from './features/auth/login-page.component';
+import { DashboardShellComponent } from './features/shell/dashboard-shell.component';
 
-describe('App', () => {
+describe('DashboardShellComponent', () => {
   let http: HttpTestingController;
 
   beforeEach(async () => {
     localStorage.clear();
 
     await TestBed.configureTestingModule({
-      imports: [App],
+      imports: [DashboardShellComponent],
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter(routes)],
     }).compileComponents();
 
@@ -26,7 +27,7 @@ describe('App', () => {
 
   it('should create the app', () => {
     setDemoSession();
-    const fixture = TestBed.createComponent(App);
+    const fixture = TestBed.createComponent(DashboardShellComponent);
     fixture.detectChanges();
     flushAuthConfig();
     flushFinanceSnapshot();
@@ -37,7 +38,7 @@ describe('App', () => {
 
   it('should render the finance dashboard title', () => {
     setDemoSession();
-    const fixture = TestBed.createComponent(App);
+    const fixture = TestBed.createComponent(DashboardShellComponent);
     fixture.detectChanges();
     flushAuthConfig();
     flushFinanceSnapshot();
@@ -49,7 +50,7 @@ describe('App', () => {
 
   it('should render an empty accounts state when the API returns no accounts', () => {
     setDemoSession();
-    const fixture = TestBed.createComponent(App);
+    const fixture = TestBed.createComponent(DashboardShellComponent);
     fixture.detectChanges();
     flushAuthConfig();
     flushFinanceSnapshot();
@@ -98,5 +99,48 @@ describe('App', () => {
     http
       .expectOne('/api/v1/notification/in-app?householdId=00000000-0000-0000-0000-000000000000&page=1&pageSize=6')
       .flush([]);
+  }
+});
+
+describe('LoginPageComponent', () => {
+  let http: HttpTestingController;
+
+  beforeEach(async () => {
+    localStorage.clear();
+
+    await TestBed.configureTestingModule({
+      imports: [LoginPageComponent],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter(routes)],
+    }).compileComponents();
+
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    http.verify();
+  });
+
+  it('should render a standalone login page without setup copy or demo form', () => {
+    const fixture = TestBed.createComponent(LoginPageComponent);
+    fixture.detectChanges();
+    flushAuthConfig();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('Connexion securisee');
+    expect(compiled.textContent).not.toContain('Microsoft Entra External ID sera active apres configuration.');
+    expect(compiled.textContent).not.toContain('Entrer en mode demo');
+  });
+
+  function flushAuthConfig(): void {
+    http.expectOne('/config/auth-config.json').flush({
+      enabled: true,
+      authority: 'https://financeos.ciamlogin.com/',
+      clientId: 'fc46120a-447d-4b74-91cd-b9e059dcc60c',
+      redirectUri: 'http://localhost:4200/',
+      postLogoutRedirectUri: 'http://localhost:4200/',
+      knownAuthorities: ['financeos.ciamlogin.com'],
+      scopes: ['openid', 'profile', 'email'],
+    });
   }
 });
