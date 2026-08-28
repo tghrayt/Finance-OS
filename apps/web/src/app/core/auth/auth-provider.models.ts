@@ -13,6 +13,7 @@ export interface HostedAuthConfig {
   authority: string;
   clientId: string;
   redirectUri: string;
+  silentRedirectUri: string;
   postLogoutRedirectUri: string;
   knownAuthorities: string[];
   scopes: string[];
@@ -23,4 +24,3 @@ export interface HostedAuthStatus {
   ready: boolean;
   message: string;
 }
-

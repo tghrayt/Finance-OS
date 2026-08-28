@@ -3,8 +3,8 @@
   "authority": "",
   "clientId": "",
   "redirectUri": "https://financeos.51-210-40-78.sslip.io/",
+  "silentRedirectUri": "https://financeos.51-210-40-78.sslip.io/auth/silent-callback.html",
   "postLogoutRedirectUri": "https://financeos.51-210-40-78.sslip.io/",
   "knownAuthorities": [],
   "scopes": ["openid", "profile", "email"]
 }
-

@@ -13,6 +13,7 @@ data:
       "authority": "https://financeos.ciamlogin.com/",
       "clientId": "fc46120a-447d-4b74-91cd-b9e059dcc60c",
       "redirectUri": "https://financeos.51-210-40-78.sslip.io/",
+      "silentRedirectUri": "https://financeos.51-210-40-78.sslip.io/auth/silent-callback.html",
       "postLogoutRedirectUri": "https://financeos.51-210-40-78.sslip.io/",
       "knownAuthorities": [
         "financeos.ciamlogin.com",

@@ -221,6 +221,7 @@ export class AuthSessionService {
     return await this.hostedAuthClient.acquireTokenSilent({
       account,
       scopes: this.apiScopes(),
+      redirectUri: this.hostedAuthConfig.silentRedirectUri,
     });
   }
 
@@ -244,6 +245,7 @@ export class AuthSessionService {
       authority: config.authority ?? '',
       clientId: config.clientId ?? '',
       redirectUri: config.redirectUri || window.location.origin,
+      silentRedirectUri: config.silentRedirectUri || new URL('/auth/silent-callback.html', window.location.origin).toString(),
       postLogoutRedirectUri: config.postLogoutRedirectUri || window.location.origin,
       knownAuthorities: config.knownAuthorities ?? [],
       scopes: config.scopes?.length ? config.scopes : ['openid', 'profile', 'email'],
