@@ -29,8 +29,8 @@
       <div class="app-content">
         <header class="top-bar">
           <div>
-            <p class="eyebrow">FinanceOS</p>
-            <h1 id="page-title">Pilotage financier personnel</h1>
+            <p class="eyebrow">{{ pageEyebrow() }}</p>
+            <h1 id="page-title">{{ pageTitle() }}</h1>
           </div>
           <aside class="hero-panel" aria-label="Resume de synchronisation">
             <span class="material-icons" aria-hidden="true">sync</span>
@@ -148,6 +148,16 @@
                         <button
                           type="button"
                           class="icon-button ghost"
+                          title="Modifier le compte"
+                          aria-label="Modifier le compte"
+                          [disabled]="actionStatus === 'saving'"
+                          (click)="openAccountEditor(account)"
+                        >
+                          <span class="material-icons" aria-hidden="true">edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          class="icon-button ghost"
                           title="Archiver le compte"
                           aria-label="Archiver le compte"
                           [disabled]="actionStatus === 'saving' || !account.isActive"
@@ -156,6 +166,52 @@
                           <span class="material-icons" aria-hidden="true">archive</span>
                         </button>
                       </div>
+                    </div>
+                  }
+                </div>
+              }
+            </article>
+          }
+
+          @if (activeSection === 'categories') {
+            <article class="panel categories-panel">
+              <header>
+                <div>
+                  <span class="material-icons" aria-hidden="true">category</span>
+                  <h2>Categories</h2>
+                </div>
+                <strong>{{ dashboard.categories.length | number }}</strong>
+              </header>
+
+              @if (dashboard.status === 'loading') {
+                <div class="skeleton-list" aria-label="Chargement des categories">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              } @else if (dashboard.categories.length === 0) {
+                <div class="empty-state">
+                  <span class="material-icons" aria-hidden="true">new_label</span>
+                  <p>Aucune categorie configuree.</p>
+                </div>
+              } @else {
+                <div class="category-list">
+                  @for (category of dashboard.categories; track trackCategory($index, category)) {
+                    <div class="category-row">
+                      <div>
+                        <span class="material-icons" aria-hidden="true">{{ category.icon || 'label' }}</span>
+                        <strong>{{ category.name }}</strong>
+                      </div>
+                      <button
+                        type="button"
+                        class="icon-button ghost"
+                        title="Modifier la categorie"
+                        aria-label="Modifier la categorie"
+                        [disabled]="actionStatus === 'saving'"
+                        (click)="openCategoryEditor(category)"
+                      >
+                        <span class="material-icons" aria-hidden="true">edit</span>
+                      </button>
                     </div>
                   }
                 </div>
@@ -343,6 +399,8 @@
                       @case ('budget') { Budget mensuel }
                       @case ('allocation') { Allocation budgetaire }
                       @case ('transaction') { Nouvelle transaction }
+                      @case ('edit-account') { Modifier le compte }
+                      @case ('edit-category') { Modifier la categorie }
                     }
                   </h2>
                 </div>
@@ -389,6 +447,33 @@
                   </form>
                 }
 
+                @case ('edit-account') {
+                  <form class="action-form" [formGroup]="accountEditForm" (ngSubmit)="updateAccount()">
+                    <label>
+                      Nom
+                      <input type="text" formControlName="name" placeholder="Compte courant" />
+                    </label>
+                    <div class="form-grid">
+                      <label>
+                        Type
+                        <select formControlName="type">
+                          @for (type of accountTypes; track type) {
+                            <option [value]="type">{{ type }}</option>
+                          }
+                        </select>
+                      </label>
+                      <label>
+                        Banque
+                        <input type="text" formControlName="institutionName" placeholder="Optionnel" />
+                      </label>
+                    </div>
+                    <button type="submit" [disabled]="actionStatus === 'saving' || !editingAccount">
+                      <span class="material-icons" aria-hidden="true">save</span>
+                      Enregistrer
+                    </button>
+                  </form>
+                }
+
                 @case ('category') {
                   <form class="action-form" [formGroup]="categoryForm" (ngSubmit)="createCategory()">
                     <div class="form-grid">
@@ -404,6 +489,25 @@
                     <button type="submit" [disabled]="actionStatus === 'saving'">
                       <span class="material-icons" aria-hidden="true">new_label</span>
                       Ajouter la categorie
+                    </button>
+                  </form>
+                }
+
+                @case ('edit-category') {
+                  <form class="action-form" [formGroup]="categoryEditForm" (ngSubmit)="updateCategory()">
+                    <div class="form-grid">
+                      <label>
+                        Nom
+                        <input type="text" formControlName="name" placeholder="Courses" />
+                      </label>
+                      <label>
+                        Icone
+                        <input type="text" formControlName="icon" placeholder="shopping_cart" />
+                      </label>
+                    </div>
+                    <button type="submit" [disabled]="actionStatus === 'saving' || !editingCategory">
+                      <span class="material-icons" aria-hidden="true">save</span>
+                      Enregistrer
                     </button>
                   </form>
                 }

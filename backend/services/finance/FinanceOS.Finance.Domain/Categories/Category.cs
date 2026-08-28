@@ -59,6 +59,12 @@ public sealed class Category
             createdAt ?? SystemClock.UtcNow);
     }
 
+    public void UpdateDetails(string name, string? icon)
+    {
+        Name = RequiredName(name);
+        Icon = icon?.Trim() ?? string.Empty;
+    }
+
     private static string RequiredName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))

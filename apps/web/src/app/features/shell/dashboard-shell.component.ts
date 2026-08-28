@@ -31,6 +31,8 @@ export class DashboardShellComponent {
   protected readonly transactionTypes = ['Expense', 'Income'];
   protected activeSection: AppSection = 'dashboard';
   protected activeModal: CreationModal | null = null;
+  protected editingAccount: FinanceAccount | null = null;
+  protected editingCategory: FinanceCategory | null = null;
   protected readonly authReady = signal(false);
   protected actionStatus: 'idle' | 'saving' = 'idle';
   protected actionMessage = '';
@@ -77,6 +79,17 @@ export class DashboardShellComponent {
     plannedAmount: [100, [Validators.required, Validators.min(0.01)]],
   });
 
+  protected readonly accountEditForm = this.formBuilder.nonNullable.group({
+    name: ['', [Validators.required, Validators.maxLength(120)]],
+    type: ['Checking', Validators.required],
+    institutionName: [''],
+  });
+
+  protected readonly categoryEditForm = this.formBuilder.nonNullable.group({
+    name: ['', [Validators.required, Validators.maxLength(120)]],
+    icon: ['label', [Validators.required, Validators.maxLength(64)]],
+  });
+
   constructor() {
     this.syncActiveSection(this.router.url);
     this.router.events
@@ -114,7 +127,7 @@ export class DashboardShellComponent {
 
   protected signOut(): void {
     this.authSession.clearSession();
-    this.activeModal = null;
+    this.dismissModal();
     void this.router.navigate(['/login']);
   }
 
@@ -128,12 +141,31 @@ export class DashboardShellComponent {
     this.activeModal = modal;
   }
 
+  protected openAccountEditor(account: FinanceAccount): void {
+    this.editingAccount = account;
+    this.accountEditForm.reset({
+      name: account.name,
+      type: account.type,
+      institutionName: account.institutionName,
+    });
+    this.openModal('edit-account');
+  }
+
+  protected openCategoryEditor(category: FinanceCategory): void {
+    this.editingCategory = category;
+    this.categoryEditForm.reset({
+      name: category.name,
+      icon: category.icon || 'label',
+    });
+    this.openModal('edit-category');
+  }
+
   protected closeModal(): void {
     if (this.actionStatus === 'saving') {
       return;
     }
 
-    this.activeModal = null;
+    this.dismissModal();
   }
 
   protected categoryName(transaction: FinanceTransaction, categories: FinanceCategory[]): string {
@@ -142,6 +174,27 @@ export class DashboardShellComponent {
 
   protected allocationCategoryName(allocation: { categoryId: string }, categories: FinanceCategory[]): string {
     return categories.find((category) => category.categoryId === allocation.categoryId)?.name ?? 'Categorie';
+  }
+
+  protected pageTitle(): string {
+    switch (this.activeSection) {
+      case 'accounts':
+        return 'Comptes financiers';
+      case 'transactions':
+        return 'Transactions';
+      case 'budgets':
+        return 'Budget mensuel';
+      case 'categories':
+        return 'Categories';
+      case 'notifications':
+        return 'Alertes budget';
+      default:
+        return 'Pilotage financier personnel';
+    }
+  }
+
+  protected pageEyebrow(): string {
+    return this.activeSection === 'dashboard' ? 'FinanceOS' : 'Espace de gestion';
   }
 
   protected get householdId(): string {
@@ -181,7 +234,7 @@ export class DashboardShellComponent {
             currency: account.currency,
             institutionName: '',
           });
-          this.closeModal();
+          this.dismissModal();
           this.refreshDashboard$.next();
         },
         error: () => {
@@ -208,6 +261,35 @@ export class DashboardShellComponent {
         },
         error: () => {
           this.actionMessage = "Archivage du compte impossible pour le moment.";
+        },
+      });
+  }
+
+  protected updateAccount(): void {
+    if (!this.editingAccount || this.accountEditForm.invalid || this.actionStatus === 'saving') {
+      this.accountEditForm.markAllAsTouched();
+      return;
+    }
+
+    const value = this.accountEditForm.getRawValue();
+    this.actionStatus = 'saving';
+    this.actionMessage = '';
+
+    this.financeApi
+      .updateAccount(this.editingAccount.accountId, {
+        name: value.name.trim(),
+        type: value.type,
+        institutionName: this.emptyToNull(value.institutionName),
+      })
+      .pipe(finalize(() => (this.actionStatus = 'idle')))
+      .subscribe({
+        next: (account) => {
+          this.actionMessage = `Compte "${account.name}" mis a jour.`;
+          this.dismissModal();
+          this.refreshDashboard$.next();
+        },
+        error: () => {
+          this.actionMessage = 'Modification du compte impossible pour le moment.';
         },
       });
   }
@@ -245,7 +327,7 @@ export class DashboardShellComponent {
             description: '',
             transactionDate: new Date().toISOString().slice(0, 10),
           });
-          this.closeModal();
+          this.dismissModal();
           this.refreshDashboard$.next();
         },
         error: () => {
@@ -276,11 +358,39 @@ export class DashboardShellComponent {
           this.actionMessage = `Categorie "${category.name}" creee.`;
           this.transactionForm.patchValue({ categoryId: category.categoryId });
           this.categoryForm.reset({ name: '', icon: 'label' });
-          this.closeModal();
+          this.dismissModal();
           this.refreshDashboard$.next();
         },
         error: () => {
           this.actionMessage = 'Creation de la categorie impossible pour le moment.';
+        },
+      });
+  }
+
+  protected updateCategory(): void {
+    if (!this.editingCategory || this.categoryEditForm.invalid || this.actionStatus === 'saving') {
+      this.categoryEditForm.markAllAsTouched();
+      return;
+    }
+
+    const value = this.categoryEditForm.getRawValue();
+    this.actionStatus = 'saving';
+    this.actionMessage = '';
+
+    this.financeApi
+      .updateCategory(this.editingCategory.categoryId, {
+        name: value.name.trim(),
+        icon: value.icon.trim(),
+      })
+      .pipe(finalize(() => (this.actionStatus = 'idle')))
+      .subscribe({
+        next: (category) => {
+          this.actionMessage = `Categorie "${category.name}" mise a jour.`;
+          this.dismissModal();
+          this.refreshDashboard$.next();
+        },
+        error: () => {
+          this.actionMessage = 'Modification de la categorie impossible pour le moment.';
         },
       });
   }
@@ -307,7 +417,7 @@ export class DashboardShellComponent {
       .subscribe({
         next: () => {
           this.actionMessage = 'Budget mensuel cree.';
-          this.closeModal();
+          this.dismissModal();
           this.refreshDashboard$.next();
         },
         error: () => {
@@ -332,7 +442,7 @@ export class DashboardShellComponent {
       .subscribe({
         next: () => {
           this.actionMessage = 'Allocation budgetaire mise a jour.';
-          this.closeModal();
+          this.dismissModal();
           this.refreshDashboard$.next();
         },
         error: () => {
@@ -378,6 +488,12 @@ export class DashboardShellComponent {
   private emptyToNull(value: string): string | null {
     const trimmed = value.trim();
     return trimmed.length === 0 ? null : trimmed;
+  }
+
+  private dismissModal(): void {
+    this.activeModal = null;
+    this.editingAccount = null;
+    this.editingCategory = null;
   }
 
   private syncActiveSection(url: string): void {

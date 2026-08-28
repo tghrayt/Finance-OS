@@ -88,6 +88,14 @@ public sealed class Account
         UpdatedAt = updatedAt ?? SystemClock.UtcNow;
     }
 
+    public void UpdateDetails(string name, AccountType type, string? institutionName, DateTimeOffset? updatedAt = null)
+    {
+        Name = RequiredName(name);
+        Type = type;
+        InstitutionName = institutionName?.Trim() ?? string.Empty;
+        UpdatedAt = updatedAt ?? SystemClock.UtcNow;
+    }
+
     private static string RequiredName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))

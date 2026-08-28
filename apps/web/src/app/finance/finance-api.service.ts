@@ -13,6 +13,7 @@ export interface FinanceAccount {
   type: string;
   currentBalance: number;
   currency: string;
+  institutionName: string;
   isActive: boolean;
 }
 
@@ -52,6 +53,13 @@ export interface CreateAccountRequest {
   institutionName: string | null;
 }
 
+export interface UpdateAccountRequest {
+  householdId: string;
+  name: string;
+  type: string;
+  institutionName: string | null;
+}
+
 export interface CreateTransactionRequest {
   householdId: string;
   accountId: string;
@@ -70,6 +78,12 @@ export interface CreateCategoryRequest {
   householdId: string;
   name: string;
   parentCategoryId: string | null;
+  icon: string | null;
+}
+
+export interface UpdateCategoryRequest {
+  householdId: string;
+  name: string;
   icon: string | null;
 }
 
@@ -99,6 +113,13 @@ export class FinanceApiService {
     );
   }
 
+  updateAccount(accountId: string, request: Omit<UpdateAccountRequest, 'householdId'>): Observable<FinanceAccount> {
+    return this.http.put<FinanceAccount>(
+      `${FINANCE_API_BASE_URL}/accounts/${accountId}`,
+      this.withHousehold<UpdateAccountRequest>(request),
+    );
+  }
+
   createTransaction(request: Omit<CreateTransactionRequest, 'householdId'>): Observable<FinanceTransaction> {
     return this.http.post<FinanceTransaction>(
       `${FINANCE_API_BASE_URL}/transactions`,
@@ -110,6 +131,13 @@ export class FinanceApiService {
     return this.http.post<FinanceCategory>(
       `${FINANCE_API_BASE_URL}/categories`,
       this.withHousehold<CreateCategoryRequest>(request),
+    );
+  }
+
+  updateCategory(categoryId: string, request: Omit<UpdateCategoryRequest, 'householdId'>): Observable<FinanceCategory> {
+    return this.http.put<FinanceCategory>(
+      `${FINANCE_API_BASE_URL}/categories/${categoryId}`,
+      this.withHousehold<UpdateCategoryRequest>(request),
     );
   }
 

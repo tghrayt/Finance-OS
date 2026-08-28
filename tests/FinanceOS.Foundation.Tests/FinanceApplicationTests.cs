@@ -1,6 +1,9 @@
 using FinanceOS.Finance.Application.Abstractions;
+using FinanceOS.Finance.Application.Common;
 using FinanceOS.Finance.Application.Features.Accounts.CreateAccount;
+using FinanceOS.Finance.Application.Features.Accounts.UpdateAccount;
 using FinanceOS.Finance.Application.Features.Categories.CreateCategory;
+using FinanceOS.Finance.Application.Features.Categories.UpdateCategory;
 using FinanceOS.Finance.Application.Features.Transactions.CreateTransaction;
 using FinanceOS.Finance.Domain.Accounts;
 using FinanceOS.Finance.Domain.Categories;
@@ -32,6 +35,65 @@ public sealed class FinanceApplicationTests
         var result = await handler.HandleAsync(new CreateCategoryCommand(Guid.NewGuid(), "Groceries", null, "shopping-cart"), CancellationToken.None);
 
         Assert.Equal("Groceries", result.Name);
+    }
+
+    [Fact]
+    public async Task UpdateAccountChangesEditableDetails()
+    {
+        var householdId = Guid.NewGuid();
+        var accounts = new InMemoryAccountRepository();
+        var account = Account.Create(new HouseholdId(householdId), "Old name", AccountType.Checking, 100, "EUR");
+        await accounts.AddAsync(account, CancellationToken.None);
+        var handler = new UpdateAccountHandler(accounts, new InMemoryUnitOfWork());
+
+        var result = await handler.HandleAsync(
+            new UpdateAccountCommand(householdId, account.Id.Value, "Main account", AccountType.Savings, "Bank"),
+            CancellationToken.None);
+
+        Assert.Equal("Main account", result.Name);
+        Assert.Equal("Savings", result.Type);
+        Assert.Equal("Bank", result.InstitutionName);
+    }
+
+    [Fact]
+    public async Task UpdateAccountRejectsAccountFromAnotherHousehold()
+    {
+        var accounts = new InMemoryAccountRepository();
+        var account = Account.Create(HouseholdId.New(), "Checking", AccountType.Checking, 100, "EUR");
+        await accounts.AddAsync(account, CancellationToken.None);
+        var handler = new UpdateAccountHandler(accounts, new InMemoryUnitOfWork());
+
+        await Assert.ThrowsAsync<FinanceNotFoundException>(() =>
+            handler.HandleAsync(new UpdateAccountCommand(Guid.NewGuid(), account.Id.Value, "Main", AccountType.Checking, null), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task UpdateCategoryChangesEditableDetails()
+    {
+        var householdId = Guid.NewGuid();
+        var categories = new InMemoryCategoryRepository();
+        var category = Category.Create(new HouseholdId(householdId), "Food", icon: "restaurant");
+        await categories.AddAsync(category, CancellationToken.None);
+        var handler = new UpdateCategoryHandler(categories, new InMemoryUnitOfWork());
+
+        var result = await handler.HandleAsync(
+            new UpdateCategoryCommand(householdId, category.Id.Value, "Groceries", "shopping_cart"),
+            CancellationToken.None);
+
+        Assert.Equal("Groceries", result.Name);
+        Assert.Equal("shopping_cart", result.Icon);
+    }
+
+    [Fact]
+    public async Task UpdateCategoryRejectsCategoryFromAnotherHousehold()
+    {
+        var categories = new InMemoryCategoryRepository();
+        var category = Category.Create(HouseholdId.New(), "Food", icon: "restaurant");
+        await categories.AddAsync(category, CancellationToken.None);
+        var handler = new UpdateCategoryHandler(categories, new InMemoryUnitOfWork());
+
+        await Assert.ThrowsAsync<FinanceNotFoundException>(() =>
+            handler.HandleAsync(new UpdateCategoryCommand(Guid.NewGuid(), category.Id.Value, "Groceries", "shopping_cart"), CancellationToken.None));
     }
 
     [Fact]

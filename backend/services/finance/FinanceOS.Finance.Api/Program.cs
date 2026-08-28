@@ -4,8 +4,10 @@ using FinanceOS.Finance.Application.Features.Accounts.ArchiveAccount;
 using FinanceOS.Finance.Api.Endpoints;
 using FinanceOS.Finance.Application.Features.Accounts.CreateAccount;
 using FinanceOS.Finance.Application.Features.Accounts.GetAccounts;
+using FinanceOS.Finance.Application.Features.Accounts.UpdateAccount;
 using FinanceOS.Finance.Application.Features.Categories.CreateCategory;
 using FinanceOS.Finance.Application.Features.Categories.GetCategories;
+using FinanceOS.Finance.Application.Features.Categories.UpdateCategory;
 using FinanceOS.Finance.Application.Features.Transactions.CreateTransaction;
 using FinanceOS.Finance.Application.Features.Transactions.GetTransactions;
 using FinanceOS.Finance.Infrastructure;
@@ -21,8 +23,10 @@ builder.Services.AddFinanceOSJwtSecurity(builder.Configuration, builder.Environm
 builder.Services.AddScoped<ArchiveAccountHandler>();
 builder.Services.AddScoped<CreateAccountHandler>();
 builder.Services.AddScoped<GetAccountsHandler>();
+builder.Services.AddScoped<UpdateAccountHandler>();
 builder.Services.AddScoped<CreateCategoryHandler>();
 builder.Services.AddScoped<GetCategoriesHandler>();
+builder.Services.AddScoped<UpdateCategoryHandler>();
 builder.Services.AddScoped<CreateTransactionHandler>();
 builder.Services.AddScoped<GetTransactionsHandler>();
 builder.Services

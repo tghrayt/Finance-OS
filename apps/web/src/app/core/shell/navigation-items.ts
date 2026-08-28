@@ -5,5 +5,6 @@ export const NAVIGATION_ITEMS: ReadonlyArray<NavigationItem> = [
   { section: 'accounts', label: 'Comptes', icon: 'account_balance' },
   { section: 'transactions', label: 'Transactions', icon: 'receipt_long' },
   { section: 'budgets', label: 'Budgets', icon: 'savings' },
+  { section: 'categories', label: 'Categories', icon: 'category' },
   { section: 'notifications', label: 'Alertes', icon: 'notifications_active' },
 ];

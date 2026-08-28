@@ -10,6 +10,7 @@ export const routes: Routes = [
   { path: 'accounts', component: DashboardShellComponent },
   { path: 'transactions', component: DashboardShellComponent },
   { path: 'budgets', component: DashboardShellComponent },
+  { path: 'categories', component: DashboardShellComponent },
   { path: 'notifications', component: DashboardShellComponent },
   { path: '**', redirectTo: 'dashboard' },
 ];

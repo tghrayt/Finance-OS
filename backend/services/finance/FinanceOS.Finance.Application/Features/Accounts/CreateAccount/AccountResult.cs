@@ -9,6 +9,7 @@ public sealed record AccountResult(
     string Type,
     decimal CurrentBalance,
     string Currency,
+    string InstitutionName,
     bool IsActive)
 {
     public static AccountResult FromAccount(Account account) =>
@@ -19,5 +20,6 @@ public sealed record AccountResult(
             account.Type.ToString(),
             account.CurrentBalance,
             account.Currency,
+            account.InstitutionName,
             account.IsActive);
 }

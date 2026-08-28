@@ -403,6 +403,7 @@ h1 {
 
 .account-list,
 .allocation-list,
+.category-list,
 .notification-list,
 .transaction-list,
 .skeleton-list {
@@ -412,6 +413,7 @@ h1 {
 
 .account-row,
 .allocation-row,
+.category-row,
 .notification-row,
 .transaction-row {
   align-items: center;
@@ -426,11 +428,18 @@ h1 {
 
 .account-row strong,
 .allocation-row strong,
+.category-row strong,
 .notification-row strong,
 .transaction-row strong {
   color: #ffffff;
   display: block;
   font-size: 0.95rem;
+}
+
+.category-row > div {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
 }
 
 .account-row span,
@@ -838,10 +847,15 @@ button:disabled {
   }
 
   .account-row,
+  .category-row,
   .notification-row,
   .transaction-row {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .category-row {
+    gap: 0.85rem;
   }
 
   .account-row b,
