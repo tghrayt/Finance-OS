@@ -1,4 +1,5 @@
 import { AsyncPipe, CurrencyPipe, DatePipe, DecimalPipe, PercentPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NavigationEnd, Router } from '@angular/router';
@@ -237,8 +238,8 @@ export class DashboardShellComponent {
           this.dismissModal();
           this.refreshDashboard$.next();
         },
-        error: () => {
-          this.actionMessage = 'Creation du compte impossible pour le moment.';
+        error: (error: unknown) => {
+          this.actionMessage = this.describeActionError('Creation du compte impossible', error);
         },
       });
   }
@@ -259,8 +260,8 @@ export class DashboardShellComponent {
           this.actionMessage = `Compte "${account.name}" archive.`;
           this.refreshDashboard$.next();
         },
-        error: () => {
-          this.actionMessage = "Archivage du compte impossible pour le moment.";
+        error: (error: unknown) => {
+          this.actionMessage = this.describeActionError("Archivage du compte impossible", error);
         },
       });
   }
@@ -288,8 +289,8 @@ export class DashboardShellComponent {
           this.dismissModal();
           this.refreshDashboard$.next();
         },
-        error: () => {
-          this.actionMessage = 'Modification du compte impossible pour le moment.';
+        error: (error: unknown) => {
+          this.actionMessage = this.describeActionError('Modification du compte impossible', error);
         },
       });
   }
@@ -330,8 +331,8 @@ export class DashboardShellComponent {
           this.dismissModal();
           this.refreshDashboard$.next();
         },
-        error: () => {
-          this.actionMessage = 'Creation de la transaction impossible pour le moment.';
+        error: (error: unknown) => {
+          this.actionMessage = this.describeActionError('Creation de la transaction impossible', error);
         },
       });
   }
@@ -361,8 +362,8 @@ export class DashboardShellComponent {
           this.dismissModal();
           this.refreshDashboard$.next();
         },
-        error: () => {
-          this.actionMessage = 'Creation de la categorie impossible pour le moment.';
+        error: (error: unknown) => {
+          this.actionMessage = this.describeActionError('Creation de la categorie impossible', error);
         },
       });
   }
@@ -389,8 +390,8 @@ export class DashboardShellComponent {
           this.dismissModal();
           this.refreshDashboard$.next();
         },
-        error: () => {
-          this.actionMessage = 'Modification de la categorie impossible pour le moment.';
+        error: (error: unknown) => {
+          this.actionMessage = this.describeActionError('Modification de la categorie impossible', error);
         },
       });
   }
@@ -420,8 +421,8 @@ export class DashboardShellComponent {
           this.dismissModal();
           this.refreshDashboard$.next();
         },
-        error: () => {
-          this.actionMessage = 'Creation du budget impossible pour le moment.';
+        error: (error: unknown) => {
+          this.actionMessage = this.describeActionError('Creation du budget impossible', error);
         },
       });
   }
@@ -445,8 +446,8 @@ export class DashboardShellComponent {
           this.dismissModal();
           this.refreshDashboard$.next();
         },
-        error: () => {
-          this.actionMessage = "Mise a jour de l'allocation impossible pour le moment.";
+        error: (error: unknown) => {
+          this.actionMessage = this.describeActionError("Mise a jour de l'allocation impossible", error);
         },
       });
   }
@@ -467,8 +468,8 @@ export class DashboardShellComponent {
           this.actionMessage = 'Alerte marquee comme lue.';
           this.refreshDashboard$.next();
         },
-        error: () => {
-          this.actionMessage = "Mise a jour de l'alerte impossible pour le moment.";
+        error: (error: unknown) => {
+          this.actionMessage = this.describeActionError("Mise a jour de l'alerte impossible", error);
         },
       });
   }
@@ -488,6 +489,36 @@ export class DashboardShellComponent {
   private emptyToNull(value: string): string | null {
     const trimmed = value.trim();
     return trimmed.length === 0 ? null : trimmed;
+  }
+
+  private describeActionError(prefix: string, error: unknown): string {
+    if (!(error instanceof HttpErrorResponse)) {
+      return `${prefix}.`;
+    }
+
+    const details = this.extractProblemDetails(error.error);
+    const status = error.status > 0 ? `HTTP ${error.status}` : 'Erreur reseau';
+
+    return details ? `${prefix} (${status}) : ${details}` : `${prefix} (${status}).`;
+  }
+
+  private extractProblemDetails(error: unknown): string | null {
+    if (!error) {
+      return null;
+    }
+
+    if (typeof error === 'string') {
+      return error;
+    }
+
+    if (typeof error === 'object') {
+      const problem = error as { detail?: unknown; title?: unknown; message?: unknown };
+      const value = problem.detail ?? problem.title ?? problem.message;
+
+      return typeof value === 'string' ? value : null;
+    }
+
+    return null;
   }
 
   private dismissModal(): void {
