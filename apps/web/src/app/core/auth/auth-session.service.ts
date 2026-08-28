@@ -169,8 +169,19 @@ export class AuthSessionService {
     const { PublicClientApplication } = await import('@azure/msal-browser');
     this.hostedAuthClient = new PublicClientApplication(this.buildMsalConfiguration(this.hostedAuthConfig));
     await this.hostedAuthClient.initialize();
-    const redirectResult = await this.hostedAuthClient.handleRedirectPromise();
-    await this.captureAuthenticatedSession(redirectResult);
+
+    try {
+      const redirectResult = await this.hostedAuthClient.handleRedirectPromise();
+      await this.captureAuthenticatedSession(redirectResult);
+    } catch {
+      this.clearLocalSession();
+      this.hostedAuthStatus.set({
+        enabled: true,
+        ready: false,
+        message: 'Session expiree. Reconnecte-toi pour continuer.',
+      });
+      return;
+    }
 
     this.hostedAuthStatus.set({
       enabled: true,
