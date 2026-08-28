@@ -87,16 +87,43 @@ export class AuthSessionService {
   }
 
   clearSession(): void {
-    this.currentSession.set(null);
-    this.householdId.set(DEMO_HOUSEHOLD_ID);
-    localStorage.removeItem(STORAGE_KEY);
+    this.clearLocalSession();
     void this.hostedAuthClient?.logoutRedirect({
       postLogoutRedirectUri: this.hostedAuthConfig?.postLogoutRedirectUri || window.location.origin,
     });
   }
 
+  clearLocalSession(): void {
+    this.currentSession.set(null);
+    this.householdId.set(DEMO_HOUSEHOLD_ID);
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
   getAccessToken(): string | null {
     return this.currentSession()?.accessToken ?? null;
+  }
+
+  async getAccessTokenForApi(): Promise<string | null> {
+    const session = this.currentSession();
+    if (!session || session.mode !== 'authenticated') {
+      return null;
+    }
+
+    try {
+      await this.initializeHostedAuth();
+      const result = await this.acquireAccessToken();
+      const refreshedSession = {
+        ...session,
+        householdId: this.householdId(),
+        accessToken: result.accessToken,
+      };
+      this.setSession(refreshedSession);
+
+      return result.accessToken;
+    } catch {
+      this.clearLocalSession();
+      return null;
+    }
   }
 
   private setSession(session: AuthSession): void {

@@ -1,21 +1,36 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { from, switchMap } from 'rxjs';
 
 import { AuthSessionService } from './auth-session.service';
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const authSession = inject(AuthSessionService);
-  const accessToken = authSession.getAccessToken();
+  const router = inject(Router);
 
-  if (!accessToken || !request.url.startsWith('/api/')) {
+  if (!request.url.startsWith('/api/') || request.headers.has('Authorization')) {
     return next(request);
   }
 
-  return next(
-    request.clone({
-      setHeaders: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+  if (!authSession.getAccessToken()) {
+    return next(request);
+  }
+
+  return from(authSession.getAccessTokenForApi()).pipe(
+    switchMap((accessToken) => {
+      if (!accessToken) {
+        void router.navigate(['/login']);
+        return next(request);
+      }
+
+      return next(
+        request.clone({
+          setHeaders: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }),
+      );
     }),
   );
 };
